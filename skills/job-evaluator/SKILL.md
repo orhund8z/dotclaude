@@ -1,9 +1,19 @@
 ---
 name: job-evaluator
-description: Given one or more company names or URLs, produces a comprehensive job evaluation report tailored to the candidate profile defined in PROFILE.md. Searches Glassdoor, Kununu, Levels.fyi, LinkedIn, Remotely.de, Xing, Indeed.de, Monster.de, Comprehensive.io, Layoffs.fyi, Hiring.cafe, Builtin.com, and Wellfound.com. Use this skill when the user provides company names or URLs, researches job listings, or uses phrases like "evaluate this company", "should I apply here", "what's the salary", "what are the employee reviews", "compare these companies".
+description: Given one or more company names, URLs, or offers, produces a comprehensive job evaluation report tailored to the candidate profile defined in PROFILE.md, including a Career Value Index (CVI) that scores total compensation, how generously the company pays relative to its own capacity (Fair Share Ratio), equity upside, career capital, and stability. Searches Glassdoor, Kununu, Levels.fyi, LinkedIn, Remotely.de, Xing, Indeed.de, Monster.de, Comprehensive.io, Layoffs.fyi, Hiring.cafe, Builtin.com, and Wellfound.com. Use this skill when the user provides company names, URLs, or offers, researches job listings, or uses phrases like "evaluate this company", "should I apply here", "compare these offers", "which offer should I take", "what's the salary", "is this a fair offer", "what are the employee reviews", "compare these companies".
 ---
 
 # Job Evaluator Skill
+
+## Role
+
+Act as an experienced **career advisor, compensation consultant, and software hiring manager** with deep
+knowledge of the European and US technology markets.
+
+The job is **not** to compare salaries. It is to estimate the **long-term career value** of each opportunity:
+what the candidate earns today, what the company could have paid, what the equity is realistically worth,
+what the role does to the candidate's market value in 2–5 years, and what it costs them in stability and
+work-life balance. Two offers with identical base salaries are rarely worth the same thing.
 
 ## Step 0 — Load Candidate Profile
 
@@ -24,6 +34,21 @@ This skill operates in **strict zero-hallucination mode**:
 - Do not guess that a company "probably" uses a certain tech stack or "likely" offers equity.
 - If a search returns no relevant results for a specific source, write **"No results found on [source name]"**.
 - Cite the source URL next to every data point.
+
+### The one carve-out: modeled estimates
+
+The **Career Value Index** section (and only that section) is allowed to reason beyond the raw search
+results — a score is by definition a model, and refusing to estimate would make it useless. Inside that
+section:
+
+- Estimates are permitted, but every one must be **explicitly labelled** `[estimated]` and listed in the
+  **Assumptions Ledger** with its basis and a confidence level (High / Medium / Low).
+- An estimate must be derived from something found (headcount, funding, revenue, market bands, stage), not
+  from a general impression of the company.
+- The factual sections above (ratings, salaries reported, open positions, layoffs) stay strict: no estimates
+  leak into them.
+- If more than half the CVI inputs are estimated, cap the reported confidence at **Low** and say so in the
+  verdict — a confidently-stated score built on guesses is worse than no score.
 
 ---
 
@@ -57,6 +82,15 @@ Search all sources below. Consolidate all matching positions into one table. Onl
 ### Stability
 16. **Layoffs.fyi:** `[company name] layoffs.fyi` → layoff events, dates, headcount reductions
 
+### Company Capacity (inputs for the Fair Share Ratio)
+These searches establish **what the company could afford to pay**, which is what makes the CVI more than a salary comparison.
+
+17. **Funding & valuation:** `[company name] funding round valuation crunchbase` → total raised, last round size + date, post-money valuation, lead investors
+18. **Revenue & profitability:** `[company name] revenue ARR profitable annual report` → revenue, ARR, margin, profitability status
+19. **Headcount:** `[company name] number of employees linkedin headcount` → current headcount and growth/shrink trend
+20. **Equity instrument:** `[company name] RSU stock options ESOP VSOP vesting cliff employees` → what employees actually receive, vesting schedule, exercise terms
+21. **Exit signals:** `[company name] IPO acquisition rumors S-1 secondary sale` → IPO/M&A trajectory, secondary market liquidity
+
 ---
 
 ## Report Format
@@ -84,12 +118,24 @@ Summarize layoff events found on Layoffs.fyi or in news results:
 
 If no layoffs found: `No layoffs recorded on Layoffs.fyi or in recent news.`
 
-#### 💰 SALARY & PACKAGE
-- **Market Range (target roles):** €XXX,XXX – €XXX,XXX base — [source](url)
-- **Reported Salaries at This Company:** [cite source and URL]
-- **Equity:** [what was found, or "data not available"]
-- **Bonus:** [what was found, or "data not available"]
-- **Benefits:** [what was found, or "data not available"]
+#### 💰 TOTAL COMPENSATION
+Never report base salary alone. Break the package into its components and total them.
+
+| Component | Value (annualised) | Source / Basis |
+|-----------|--------------------|----------------|
+| Base salary | €XXX,XXX | [source](url) |
+| Annual bonus | €XX,XXX (XX% target) | [source](url) |
+| Equity (per year) | €XX,XXX | [source](url) — see instrument below |
+| Benefits (quantified) | €X,XXX | pension match, meal/transport, learning budget, extra leave |
+| **Total Compensation** | **€XXX,XXX** | |
+
+- **Market Range (target roles, this location/level):** €XXX,XXX – €XXX,XXX TC — [source](url)
+- **Position in band:** below p25 / p25 / p50 / p75 / p90+ — [source](url)
+- **Equity instrument:** RSU (public) / RSU (private) / ISO / NSO / ESOP / **VSOP or phantom shares** — with vesting schedule, cliff, and exercise window.
+  > Flag explicitly when the instrument is a German **VSOP / virtual share**: it pays only on exit and is taxed as ordinary income, so it is worth materially less than an equivalent RSU grant. Do not silently treat it as equity.
+- **Dilution / preference risk:** [what was found, or "data not available"]
+
+Quantify benefits only where a concrete figure is findable or derivable (e.g. "30 days leave vs. 26 statutory" → ~2% of base). Otherwise list them unquantified and exclude from the total rather than guessing.
 
 #### ✅ PROS
 (From employee reviews — most frequently mentioned. Include source URL per point where possible.)
@@ -141,10 +187,150 @@ List every source searched and whether it returned relevant data:
 - 🚀 Wellfound.com: [link or "no results"]
 - 🏢 Careers Page: [link or "no results"]
 
-#### 🏁 OVERALL ASSESSMENT
-**Decision:** 🟢 APPLY | 🟡 RESEARCH MORE | 🔴 SKIP
+#### 🧭 CAREER VALUE INDEX (CVI)
 
-**Rationale:** (2–3 sentences based solely on data found above. Do not speculate beyond what was found.)
+A 0–100 score of the opportunity's **long-term career value**, not its salary. Full method in
+[Career Value Index](#career-value-index-cvi--method) below.
+
+**CVI: XX / 100 — [Band]** · Confidence: High / Medium / Low
+
+| Pillar | Score | Weight | What drove it |
+|--------|-------|--------|---------------|
+| 💶 Total Compensation | XX / 25 | 25% | position in market band |
+| ⚖️ Fair Share Ratio | XX / 20 | 20% | pay vs. what the company can afford |
+| 📈 Equity Upside | XX / 20 | 20% | instrument, stage, exit probability |
+| 🚀 Career Capital | XX / 25 | 25% | CV value, scope, learning, promotion path |
+| 🛡️ Stability & Sustainability | XX / 10 | 10% | runway, layoffs, WLB, on-call |
+
+**Fair Share Ratio: X.XX** — [one line: what the company can afford vs. what it is offering]
+
+**Career market value in 2–5 years:** €XXX,XXX – €XXX,XXX `[estimated]`
+(What the candidate could plausibly command *after* this role, given what it adds to their profile.)
+
+**Assumptions Ledger**
+
+| # | Assumption | Basis | Confidence |
+|---|------------|-------|------------|
+| 1 | [e.g. equity grant ≈ €40k/yr] | [Levels.fyi band for Series C, 200 FTE](url) | Medium |
+
+Every `[estimated]` figure above must appear here. If nothing was estimated, write `No estimates used — all inputs sourced.`
+
+#### 🏁 OVERALL ASSESSMENT
+**Decision:** 🟢 APPLY | 🟡 RESEARCH MORE | 🔴 SKIP · **CVI XX/100**
+
+**Rationale:** (2–3 sentences. Facts from the sections above; any forward-looking claim carries `[estimated]`.)
+
+**"Would I take this instead of waiting for another offer?"**
+Answer it directly, in the first person, as the advisor — **yes** or **no**, then the one reason that decides
+it and the single condition that would flip the answer. No hedging, no "it depends on your priorities".
+This is the paragraph the candidate actually reads.
+
+---
+
+## Career Value Index (CVI) — Method
+
+The CVI exists because **the offered salary alone does not tell you what a company thinks you are worth.**
+A company with €5 that pays you €5 values you far more than a company with €100 that pays you €10 — and if
+the first company grows, the package grows with it. The CVI prices that in.
+
+Score each pillar, then sum. Show the arithmetic — never present a score without its inputs.
+
+### 💶 Pillar 1 — Total Compensation (0–25)
+
+Uses the **Total Compensation** figure computed above, against the market band for that role, level, and
+location (Levels.fyi / Comprehensive.io).
+
+| Position in market band | Score |
+|-------------------------|-------|
+| ≥ p90 | 23–25 |
+| p75–p90 | 19–22 |
+| p50–p75 | 13–18 |
+| p25–p50 | 7–12 |
+| < p25 | 0–6 |
+
+Then apply the PROFILE.md salary floor as a hard gate: TC below the floor caps this pillar at **10**,
+regardless of band, and is flagged in the verdict.
+
+### ⚖️ Pillar 2 — Fair Share Ratio (0–20)
+
+**The differentiating pillar.** It measures generosity *relative to capacity* — does this company pay well
+for what it is, or is it a rich company making a cheap offer?
+
+**FSR = (offered TC) ÷ (TC this company's capacity and stage would support for this level)**
+
+Estimate the denominator from the Company Capacity searches:
+
+- **Public / profitable:** revenue per employee, gross margin, published comp bands, peer benchmarks.
+- **Funded startup:** total raised, last round size and date, valuation, headcount, implied runway. A
+  well-funded company with a thin offer scores low; a lean company stretching to pay market scores high.
+- **Bootstrapped / profitable SME:** revenue per employee and margin, not funding.
+
+| FSR | Reading | Score |
+|-----|---------|-------|
+| ≥ 1.20 | Pays above what its size implies — genuinely investing in this hire | 18–20 |
+| 1.00–1.20 | Pays fully what it can afford | 14–17 |
+| 0.85–1.00 | Slightly under its own capacity | 9–13 |
+| 0.65–0.85 | Underpays relative to what it holds | 4–8 |
+| < 0.65 | Rich company, cheap offer — a signal about how it will treat you later | 0–3 |
+
+State the denominator and where it came from. If capacity cannot be estimated at all, score this pillar
+`n/a`, redistribute its weight proportionally across the other four, and say so.
+
+### 📈 Pillar 3 — Equity Upside (0–20)
+
+Risk-adjusted, not headline. `Expected value = grant value × plausible multiple × exit probability × (1 − dilution)`.
+
+Assess: stage and valuation trajectory · instrument (RSU ≫ option ≫ VSOP/phantom) · strike price and
+preference stack · vesting, cliff, and post-termination exercise window · IPO/M&A signals · secondary
+market liquidity.
+
+| Situation | Score |
+|-----------|-------|
+| Public RSUs, or late-stage with credible near-term liquidity | 15–20 |
+| Growth-stage equity, real upside, real risk | 9–14 |
+| Early-stage options with meaningful multiple but low exit probability | 5–10 |
+| VSOP/phantom only, or nominal grant, or opaque terms | 1–5 |
+| No equity | 0 |
+
+An unclear preference stack or a 90-day exercise window is a **downgrade**, not a neutral. Say why.
+
+### 🚀 Pillar 4 — Career Capital (0–25)
+
+What this role does to the candidate's market value — the pillar that compounds.
+
+- **Brand value on a CV in 2–5 years** — does the name open doors in this market?
+- **Engineering reputation** — how engineers (not recruiters) regard the org: technical excellence, quality bar.
+- **Scope & impact** — ownership, blast radius, decision authority vs. ticket execution.
+- **Learning** — scale, domain, and technology the candidate cannot get elsewhere.
+- **Promotion path** — is there a real Staff/Principal ladder, and do people actually move up it?
+- **Peer quality** — who they would learn from.
+
+Score against the candidate's **target roles** in PROFILE.md: a role that is lateral for them scores lower
+than one that opens the next level, even at a stronger brand.
+
+### 🛡️ Pillar 5 — Stability & Sustainability (0–10)
+
+Runway and profitability · layoffs in the last 12–24 months · leadership churn · work-life balance and
+on-call load from reviews · attrition signals.
+
+Layoffs within 12 months cap this pillar at **5**. Two rounds in 24 months cap it at **2**.
+
+### Bands
+
+| CVI | Band | Meaning |
+|-----|------|---------|
+| 85–100 | 🟢 **Exceptional** | Take it; waiting is likely to cost you |
+| 70–84 | 🟢 **Strong** | Clearly worth pursuing |
+| 55–69 | 🟡 **Solid** | Worth it with successful negotiation on the weak pillar |
+| 40–54 | 🟡 **Marginal** | Only if a specific pillar matters disproportionately to you |
+| < 40 | 🔴 **Weak** | Keep looking |
+
+### Weight adjustment
+
+The default weights are 25/20/20/25/10. If PROFILE.md declares priorities, re-weight to match — e.g. a
+candidate who ranks compensation first shifts weight toward pillars 1–3; one optimising for a Principal
+title shifts it toward pillar 4. **Always print the weights actually used**, and note when they differ from
+the default.
 
 ---
 
@@ -178,12 +364,41 @@ List the candidate's real gaps against this specific role (tech stack, language/
 
 ## Multiple Companies
 
-If the user provides multiple companies, run the full report for each, then append a comparison table:
+If the user provides multiple companies, run the full report for each, then append both tables below,
+**sorted by CVI descending**.
 
 ### 📊 COMPARISON TABLE
 | Company | Glassdoor | Salary Fit | Stack Fit | Model Fit | Stability | Decision |
 |---------|-----------|------------|-----------|-----------|-----------|----------|
 | [Name] | X.X / 5 | ✅/⚠️/❌ | ✅/⚠️/❌ | ✅/⚠️/❌ | ✅/⚠️/❌ | 🟢/🟡/🔴 |
+
+### 🧭 CVI COMPARISON
+| Company | TC | FSR | Comp | Fair Share | Upside | Career Capital | Stability | **CVI** | Confidence |
+|---------|----|-----|------|------------|--------|----------------|-----------|---------|------------|
+| [Name] | €XXX,XXX | X.XX | XX/25 | XX/20 | XX/20 | XX/25 | XX/10 | **XX/100** | High/Med/Low |
+
+Then, in **2–3 sentences**: name the winner, name the single pillar that separates it from the runner-up,
+and state what would have to change for the ranking to flip. Where the top two are within 5 CVI points,
+call it a tie and decide on the pillar the candidate's PROFILE.md ranks highest.
+
+---
+
+## Offer Comparison Mode
+
+When the user supplies actual **offers** (numbers, not just company names), the offer figures override every
+researched salary estimate — research is then used only for the denominators: market bands, company
+capacity, equity terms, culture, stability.
+
+Additionally:
+
+- Build the Total Compensation table from the real offer numbers, and state what is still unknown
+  (grant size, strike, preference stack, bonus target) — these are the negotiation levers.
+- Compute the Fair Share Ratio against the company's actual capacity: this is where "they can afford more"
+  becomes a concrete, defensible negotiation argument. Say by how much.
+- Add a **💬 NEGOTIATION LEVERS** section: which pillar is weakest, what to ask for, what the realistic
+  ceiling is given the company's capacity, and what to trade away.
+- Answer the "would I take this instead of waiting?" question **comparatively** across the offers, and say
+  plainly which one you would sign.
 
 ---
 
@@ -212,4 +427,11 @@ Conventions: source `.md` lives under `interviews/<company>/`; generated `.html`
 - Do not suggest the candidate "may want to verify" something that you could search for yourself — search it first.
 - Use the salary floor and equity preference from PROFILE.md as the threshold for ✅/⚠️/❌ in Candidate Fit.
 - Layoffs within the last 12 months: flag as ⚠️ in both QUICK OVERVIEW and CANDIDATE FIT.
+- **Never report base salary as if it were the package** — always produce the Total Compensation breakdown.
+- **Never present a CVI without its pillar table and Assumptions Ledger.** A bare number is not a finding.
+- Every `[estimated]` figure appears in the Assumptions Ledger with its basis and confidence. No exceptions.
+- Where the Fair Share Ratio is low, say what the company could afford and by how much it is under it — that
+  is the actionable part, not the score.
+- Always answer the "would I take this instead of waiting for another offer?" question with a direct yes or
+  no. Refusing to pick a side makes the whole report worthless.
 - Include the **Interview Prep** section whenever the user is actively interviewing, has a call scheduled, or has shared recruiter/interviewer conversation context — not for a pure scan/comparison request.

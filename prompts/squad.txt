@@ -1,4 +1,4 @@
-I need you to review and revise my prompt below, you can add more instructions if required, or you can make them better. As result, write the final prompt to sdlc.md.
+I need you to review and revise my prompt below, you can add more instructions if required, or you can make them better. As result, write the final prompt to squad.md.
 I want to build new skill & agents to develop projects based on the instructions to be given later.
 
 I want to build a new skill & agents to help me with extensive development cycle:

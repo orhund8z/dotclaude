@@ -1,0 +1,186 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Job Tracker — {{RUN_DATE}}</title>
+<style>
+  :root {
+    --bg: #fbfbfa;
+    --surface: #ffffff;
+    --border: #e4e2dd;
+    --text: #1f1e1c;
+    --muted: #6b6862;
+    --accent: #b45309;
+    --new: #0f766e;
+    --new-bg: #d9f2ee;
+    --warn: #b45309;
+    --bad: #b91c1c;
+    --good: #15803d;
+    --radius: 10px;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #161513;
+      --surface: #201f1c;
+      --border: #35332e;
+      --text: #edeae4;
+      --muted: #9d998f;
+      --accent: #e0a458;
+      --new: #5eead4;
+      --new-bg: #11322e;
+      --warn: #e0a458;
+      --bad: #f87171;
+      --good: #6ee7a8;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    padding: 2rem 1.25rem 4rem;
+    background: var(--bg);
+    color: var(--text);
+    font: 15px/1.6 ui-sans-serif, -apple-system, "Segoe UI", Roboto, sans-serif;
+  }
+  .wrap { max-width: 1080px; margin: 0 auto; }
+  header { border-bottom: 1px solid var(--border); padding-bottom: 1.25rem; margin-bottom: 2rem; }
+  h1 { font-size: 1.6rem; margin: 0 0 .35rem; letter-spacing: -.01em; }
+  h2 { font-size: 1.2rem; margin: 2.5rem 0 1rem; letter-spacing: -.01em; }
+  h3 { font-size: 1rem; margin: 1.5rem 0 .5rem; }
+  .sub { color: var(--muted); font-size: .9rem; }
+  .chips { display: flex; flex-wrap: wrap; gap: .5rem; margin-top: 1rem; }
+  .chip {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 999px; padding: .3rem .8rem; font-size: .82rem;
+  }
+  .chip.hot { background: var(--new-bg); border-color: transparent; color: var(--new); font-weight: 600; }
+  .card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 1rem 1.15rem; margin-bottom: 1rem;
+  }
+  .card-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: .6rem; }
+  .card-head .name { font-weight: 650; font-size: 1.02rem; }
+  .why { color: var(--muted); font-size: .88rem; margin: .4rem 0 .2rem; }
+  .empty { color: var(--muted); font-size: .9rem; margin: .5rem 0 0; }
+  .scroll { overflow-x: auto; margin-top: .75rem; }
+  table { border-collapse: collapse; width: 100%; font-size: .88rem; min-width: 640px; }
+  th, td { text-align: left; padding: .5rem .6rem; border-bottom: 1px solid var(--border); vertical-align: top; }
+  th { color: var(--muted); font-weight: 600; font-size: .78rem; text-transform: uppercase; letter-spacing: .04em; }
+  tr:last-child td { border-bottom: 0; }
+  a { color: var(--accent); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  .badge-new {
+    background: var(--new-bg); color: var(--new); font-weight: 700;
+    font-size: .7rem; padding: .1rem .4rem; border-radius: 4px; margin-right: .4rem;
+    white-space: nowrap;
+  }
+  .fit-ok { color: var(--good); } .fit-warn { color: var(--warn); } .fit-bad { color: var(--bad); }
+  footer { margin-top: 3rem; padding-top: 1.25rem; border-top: 1px solid var(--border); color: var(--muted); font-size: .82rem; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <h1>Job Tracker</h1>
+    <div class="sub">{{RUN_TIMESTAMP}} · {{TRACKED_COUNT}} tracked companies · {{TOPIC_COUNT}} topics {{FIRST_RUN_NOTICE}}</div>
+    <div class="chips">
+      <span class="chip hot">{{NEW_COUNT}} new postings</span>
+      <span class="chip">{{MATCH_COUNT}} total matching</span>
+      <span class="chip">{{SUGGESTED_COUNT}} suggested companies</span>
+      <span class="chip">{{FILTERED_COUNT}} filtered out</span>
+    </div>
+  </header>
+
+  <!-- ============ GROUP 1 ============ -->
+  <h2>📌 Tracked Companies</h2>
+  <!-- Repeat one .card per tracked company. Companies with new postings first. -->
+  <div class="card">
+    <div class="card-head">
+      <span class="name">{{COMPANY_NAME}}</span>
+      <span class="sub">{{COMPANY_META}}</span>
+    </div>
+    <div class="scroll">
+      <table>
+        <thead>
+          <tr><th>Title</th><th>Location</th><th>Model</th><th>Salary</th><th>Posted</th><th>Fit</th><th>Link</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><span class="badge-new">NEW</span>{{JOB_TITLE}}</td>
+            <td>{{JOB_LOCATION}}</td>
+            <td>{{JOB_MODEL}}</td>
+            <td>{{JOB_SALARY}}</td>
+            <td>{{JOB_POSTED}}</td>
+            <td class="fit-ok" title="{{FIT_REASON}}">✅</td>
+            <td><a href="{{JOB_URL}}">Apply</a></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <!-- When a company has no matches, drop the table and use: -->
+    <p class="empty">No matching openings found — {{SOURCES_CHECKED}} sources checked.</p>
+  </div>
+
+  <!-- ============ GROUP 2 ============ -->
+  <h2>💡 Suggested Companies</h2>
+  <!-- Only companies that currently have at least one matching opening. -->
+  <div class="card">
+    <div class="card-head">
+      <span class="name">{{COMPANY_NAME}}</span>
+      <span class="badge-new">NEW</span>
+      <span class="sub">{{COMPANY_META}}</span>
+    </div>
+    <p class="why">Why suggested: {{WHY_SUGGESTED}} — <a href="{{EVIDENCE_URL}}">source</a></p>
+    <div class="scroll">
+      <table>
+        <thead>
+          <tr><th>Title</th><th>Location</th><th>Model</th><th>Salary</th><th>Posted</th><th>Fit</th><th>Link</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>{{JOB_TITLE}}</td>
+            <td>{{JOB_LOCATION}}</td>
+            <td>{{JOB_MODEL}}</td>
+            <td>{{JOB_SALARY}}</td>
+            <td>{{JOB_POSTED}}</td>
+            <td class="fit-warn" title="{{FIT_REASON}}">⚠️</td>
+            <td><a href="{{JOB_URL}}">Apply</a></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ============ CHANGES (omit entirely on first run) ============ -->
+  <h2>🔄 Changes since last run</h2>
+  <div class="card">
+    <h3>New postings</h3>
+    <ul>{{NEW_POSTINGS_LIST}}</ul>
+    <h3>No longer visible</h3>
+    <ul>{{GONE_POSTINGS_LIST}}</ul>
+    <h3>New suggestions</h3>
+    <ul>{{NEW_SUGGESTIONS_LIST}}</ul>
+  </div>
+
+  <!-- ============ COVERAGE ============ -->
+  <h2>🔗 Coverage &amp; sources</h2>
+  <div class="card">
+    <div class="scroll">
+      <table>
+        <thead><tr><th>Source</th><th>Companies queried</th><th>Result</th></tr></thead>
+        <tbody>
+          <tr><td>{{SOURCE_NAME}}</td><td>{{SOURCE_QUERIED}}</td><td>{{SOURCE_RESULT}}</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <footer>
+    Config: {{CONFIG_PATH}} · Profile: {{PROFILE_PATH}} · Previous run: {{PREVIOUS_RUN}}<br>
+    Generated by the <strong>job-tracker</strong> Claude Code skill. Every data point comes from a live search result; missing values are shown as “not listed”.
+  </footer>
+
+</div>
+</body>
+</html>

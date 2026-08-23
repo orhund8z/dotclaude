@@ -2,6 +2,12 @@
 # Copy PROFILE.example.md → PROFILE.md and fill in your own details
 **/PROFILE.md
 
+# job-tracker — personal watchlist, run state, and generated reports
+# Copy CONFIG.example.md → CONFIG.md and fill in your own details
+**/CONFIG.md
+skills/job-tracker/state/
+skills/job-tracker/reports/
+
 # macOS
 .DS_Store
 
