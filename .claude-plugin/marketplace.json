@@ -7,48 +7,7 @@
     "description": "Claude Code skills and agents by Orhun Dalabasmaz"
   },
   "plugins": [
-    {
-      "name": "squad",
-      "source": "./",
-      "strict": false,
-      "description": "Runs a full software development lifecycle (Analyze → Plan → Dev → Monitor) with a squad of specialised subagents: CEO, Product Manager, Architect, Developer, Reviewer, SecOps.",
-      "author": {
-        "name": "Orhun Dalabasmaz"
-      },
-      "license": "MIT",
-      "keywords": [
-        "sdlc",
-        "subagents",
-        "orchestration",
-        "planning",
-        "code-review"
-      ],
-      "skills": [
-        "./skills/squad"
-      ],
-      "agents": [
-        "./agents/squad-ceo.md",
-        "./agents/squad-product-manager.md",
-        "./agents/squad-architect.md",
-        "./agents/squad-developer.md",
-        "./agents/squad-reviewer.md",
-        "./agents/squad-secops.md"
-      ]
-    },
-    {
-      "name": "storm-analyzer",
-      "source": "./plugins/storm-analyzer",
-      "description": "Turns any topic into a STORM-style analysis: five expert perspectives, mapped contradictions, an executive-ready briefing, and a self-critical peer review.",
-      "author": {
-        "name": "Orhun Dalabasmaz"
-      },
-      "license": "MIT",
-      "keywords": [
-        "research",
-        "storm",
-        "analysis",
-        "briefing"
-      ]
-    }
+    { "name": "squad", "source": "./plugins/squad" },
+    { "name": "storm-analyzer", "source": "./plugins/storm-analyzer" }
   ]
 }

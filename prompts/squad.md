@@ -6,7 +6,7 @@ the full development lifecycle — Analyze → Plan → Dev → Monitor — chal
 drafting options, and pulling you in at key decisions, until a reviewed, tested product exists.
 
 > This document is the master spec. It is used to generate one orchestrator **skill**
-> (`skills/squad/SKILL.md`) and six **subagents** (`.claude/agents/squad-*.md`). Keep it as the
+> (`plugins/squad/skills/squad/SKILL.md`) and six **subagents** (`plugins/squad/agents/squad-*.md`). Keep it as the
 > single source of truth; regenerate the artifacts from it when the process changes.
 
 ---

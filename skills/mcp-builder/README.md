@@ -118,7 +118,7 @@ parts of the work:
 
 This is a lightweight borrow: no `docs/squad/` artifact trail or `STATE.md` is
 created. If those subagents aren't installed (see
-[`skills/squad/README.md#install`](../squad/README.md#install)), the skill
+[`plugins/squad/skills/squad/README.md#install`](../../plugins/squad/skills/squad/README.md#install)), the skill
 falls back to doing Steps 4 and 6 inline.
 
 ## Installation

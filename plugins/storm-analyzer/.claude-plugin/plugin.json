@@ -1,0 +1,8 @@
+{
+  "name": "storm-analyzer",
+  "description": "Turns any topic into a STORM-style analysis: five expert perspectives, mapped contradictions, an executive-ready briefing, and a self-critical peer review.",
+  "author": { "name": "Orhun Dalabasmaz" },
+  "repository": "https://github.com/orhund8z/dotclaude",
+  "license": "MIT",
+  "keywords": ["research", "storm", "analysis", "briefing"]
+}

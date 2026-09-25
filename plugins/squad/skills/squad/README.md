@@ -155,13 +155,19 @@ default and moves on.
 
 ## Install
 
-The skill lives in `skills/squad/`; the personas live in `agents/` and must be installed as
-Claude Code subagents. See the repo root [README](../../README.md#installation) for symlink steps.
+Install the `squad` plugin — it bundles this skill and the six `squad-*` personas (`../../agents/`):
+
+```
+/plugin marketplace add orhund8z/dotclaude
+/plugin install squad@orhund8z
+```
+
+See the repo root [README](../../../../README.md#installation) for details.
 
 ## Design
 
 The full specification this skill and its agents are generated from lives at
-[`prompts/squad.md`](../../prompts/squad.md) — keep that as the source of truth and regenerate the
+[`prompts/squad.md`](../../../../prompts/squad.md) — keep that as the source of truth and regenerate the
 files when the process changes.
 
 ## Kickoff

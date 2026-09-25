@@ -67,7 +67,7 @@ created.
   skill and run inline — they're MCP-domain judgment calls, not implementation
   or QA work.
 - If the `squad-developer`/`squad-reviewer`/`squad-secops` subagents aren't
-  installed (see `skills/squad/README.md#install`), fall back to doing Steps 3
+  installed (see `plugins/squad/skills/squad/README.md#install`), fall back to doing Steps 3
   and 5 inline as before — don't block on their availability.
 
 ## Step 0 — Find or create the shared repo

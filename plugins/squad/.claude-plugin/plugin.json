@@ -1,0 +1,8 @@
+{
+  "name": "squad",
+  "description": "Runs a full software development lifecycle (Analyze → Plan → Dev → Monitor) with a squad of specialised subagents: CEO, Product Manager, Architect, Developer, Reviewer, SecOps.",
+  "author": { "name": "Orhun Dalabasmaz" },
+  "repository": "https://github.com/orhund8z/dotclaude",
+  "license": "MIT",
+  "keywords": ["sdlc", "subagents", "orchestration", "planning", "code-review"]
+}

@@ -47,11 +47,12 @@ None beyond Claude Code itself — this skill is a self-contained prompt templat
 
 ## Installation
 
-```bash
-cp -r skills/storm-analyzer ~/.claude/skills/
-# or symlink:
-ln -s $(pwd)/skills/storm-analyzer ~/.claude/skills/storm-analyzer
 ```
+/plugin marketplace add orhund8z/dotclaude
+/plugin install storm-analyzer@orhund8z
+```
+
+Or copy it manually: `cp -r plugins/storm-analyzer/skills/storm-analyzer ~/.claude/skills/`.
 
 Restart Claude Code after installation.
 
