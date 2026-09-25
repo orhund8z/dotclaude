@@ -15,8 +15,9 @@ dotclaude/
 │   │   └── SKILL.md
 │   ├── squad/
 │   │   └── SKILL.md
+│   └── storm-analyzer/  # symlink → plugins/storm-analyzer/skills/storm-analyzer
+├── plugins/         # Plugin packages that need an isolated root
 │   └── storm-analyzer/
-│       └── SKILL.md
 ├── agents/          # Claude Code subagents (~/.claude/agents/)
 │   └── squad-*.md
 ├── prompts/         # Reusable prompt templates
@@ -53,11 +54,24 @@ The specification these are generated from lives at [`prompts/squad.md`](./promp
 
 ## Installation
 
+### Install as plugins (marketplace)
+
+`squad` (skill + persona agents) and `storm-analyzer` are published as plugins through the
+`orhund8z` marketplace defined in [`.claude-plugin/marketplace.json`](./.claude-plugin/marketplace.json).
+
+```
+/plugin marketplace add orhund8z/dotclaude
+/plugin install squad@orhund8z
+/plugin install storm-analyzer@orhund8z
+```
+
+Validate after editing the manifest: `claude plugin validate .`
+
 ### Install a skill globally (available in all projects)
 
 ```bash
 # Clone the repo
-git clone https://github.com/odalabasmaz/dotclaude.git ~/dotclaude
+git clone https://github.com/orhund8z/dotclaude.git ~/dotclaude
 
 # Symlink a skill into Claude Code's skills directory
 mkdir -p ~/.claude/skills
