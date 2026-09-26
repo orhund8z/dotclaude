@@ -39,12 +39,18 @@ Invoke each via the **Agent tool** with the matching `subagent_type`:
 
 | subagent_type | Persona | Use it to… |
 |---|---|---|
-| `squad-ceo` | CEO | Frame value/cost/ROI; approve or redirect direction |
-| `squad-product-manager` | Product Manager | Define scope, requirements, acceptance criteria (Analyze) |
-| `squad-architect` | Architect | Choose stack, design the system, write ADRs (Plan) |
-| `squad-developer` | Developer | Implement, test, document (Dev) |
-| `squad-reviewer` | Reviewer | Quality/correctness/perf/edge-case review gate |
-| `squad-secops` | SecOps | Security review gate |
+| `squad:squad-ceo` | CEO | Frame value/cost/ROI; approve or redirect direction |
+| `squad:squad-product-manager` | Product Manager | Define scope, requirements, acceptance criteria (Analyze) |
+| `squad:squad-architect` | Architect | Choose stack, design the system, write ADRs (Plan) |
+| `squad:squad-developer` | Developer | Implement, test, document (Dev) |
+| `squad:squad-reviewer` | Reviewer | Quality/correctness/perf/edge-case review gate |
+| `squad:squad-secops` | SecOps | Security review gate |
+
+The `squad:` prefix is the plugin namespace — the Agent tool rejects the bare name when the personas
+come from the plugin (`Agent type 'squad-ceo' not found`). Always pass `subagent_type` exactly as it
+appears in the Agent tool's list of available agents: if the personas were installed standalone into
+`~/.claude/agents/`, they appear without the prefix, so drop it. Elsewhere in this document,
+`squad-<role>` is shorthand for the persona and is invoked with the name above.
 
 ### How to invoke a persona (important)
 

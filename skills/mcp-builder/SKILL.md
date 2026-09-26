@@ -41,7 +41,7 @@ squad-built project. This is a lightweight borrow of the personas' habits and
 tools, not a full squad run — no `docs/squad/` artifact trail or `STATE.md` is
 created.
 
-- **Gather requirements → `subagent_type: squad-product-manager` (optional,
+- **Gather requirements → `subagent_type: squad:squad-product-manager` (optional,
   larger builds only).** For a single well-scoped server, do Step 1 inline —
   it's fast and the persona would add nothing. Delegate instead when the
   request spans multiple servers, a non-obvious domain, or several
@@ -49,13 +49,13 @@ created.
   whole job is scope + acceptance criteria; reuse it rather than
   re-improvising. Give it the raw user request and get back scope +
   acceptance criteria to feed Step 1's confirmation gate.
-- **Implement → `subagent_type: squad-developer`.** Give it: the target repo
+- **Implement → `subagent_type: squad:squad-developer`.** Give it: the target repo
   path, the concrete tool surface decided in Steps 1–2 (names, schemas,
   read-only vs mutating), and a pointer to **this file** (`skills/mcp-builder/
   SKILL.md`) as the spec to follow for server shape, error handling, timeouts,
   and the conflict/idempotency pattern in Step 3. Do not hand it vague intent —
   hand it the resolved design.
-- **Verify → `squad-reviewer` + `squad-secops`, in parallel.** After the
+- **Verify → `squad:squad-reviewer` + `squad:squad-secops`, in parallel.** After the
   Developer reports back, spawn both in one message: Reviewer checks
   correctness against Step 5's test list (required-field-omitted, conflict
   path with the optional key genuinely omitted, force/override, idempotent
@@ -66,6 +66,8 @@ created.
 - Steps 0–2, 4, and 6 (scaffolding, scope, wiring, OAuth) stay owned by this
   skill and run inline — they're MCP-domain judgment calls, not implementation
   or QA work.
+- The `squad:` prefix is the plugin namespace; if the Agent tool lists the personas without
+  it (standalone install), drop the prefix. Use the exact name from its available-agents list.
 - If the `squad-developer`/`squad-reviewer`/`squad-secops` subagents aren't
   installed (see `plugins/squad/skills/squad/README.md#install`), fall back to doing Steps 3
   and 5 inline as before — don't block on their availability.
