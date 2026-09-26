@@ -1,0 +1,172 @@
+{
+  "_help": "Edit freely. Plain terms are matched case-insensitively on word boundaries; terms starting with 're:' are raw regexes.",
+  "location": {
+    "munich_terms": ["munich", "münchen", "muenchen", "munchen", "garching", "unterföhring", "unterfoehring", "ismaning", "aschheim", "martinsried"],
+    "remote_terms": ["remote", "work from home", "distributed", "home office", "homeoffice"],
+    "region_terms_in_location": ["germany", "deutschland", "dach", "europe", "european", "emea", "eu", "european union", "worldwide", "world wide", "anywhere", "global", "cet", "cest"],
+    "region_regexes_in_description_head": ["re:(remote|located|based|hiring|hire|work|timezone|time zone|residing|reside).{0,60}(europe|european|emea|germany|dach|\\beu\\b)", "re:(europe|european|emea|germany|dach|\\beu\\b).{0,40}(remote|timezone|time zone|based)", "re:(anywhere in the world|work from anywhere|fully remote worldwide|remote worldwide|worldwide remote)"],
+    "unspecified_remote_exclude_regexes": ["re:(us|u\\.s\\.|usa|united states|canada|north america|americas|latam|apac|india|australia).{0,25}(only|based|residents?)", "re:(must|need to|required to).{0,40}(reside|live|be located|be based|be authorized|work).{0,40}(united states|\\bus\\b|usa|canada|india)", "re:\\b(new york|san francisco|bay area|seattle|austin|boston|chicago|los angeles|denver|atlanta|toronto|vancouver|bangalore|bengaluru|sydney)\\b"],
+    "head_chars": 900,
+    "weak_region_terms": ["global", "worldwide", "world wide", "anywhere"],
+    "title_region_restrictions": ["us", "usa", "u.s.", "u.s", "latam", "apac", "americas", "north america", "canada", "india", "brazil", "mexico", "australia", "singapore", "japan", "emea-excluded"]
+  },
+  "title": {
+    "role_strong": ["sre", "site reliability", "reliability engineer", "reliability", "platform engineer", "platform engineering", "platform", "infrastructure", "devops", "production engineer", "cloud engineer", "cloud", "solutions architect", "solution architect", "architect", "engineering manager", "head of engineering", "observability", "developer productivity", "developer experience"],
+    "role_generic": ["engineer", "developer", "backend", "back-end", "software", "distributed systems", "tech lead", "technical lead"],
+    "seniority_high": ["principal", "staff", "distinguished", "fellow", "senior staff", "sr. staff"],
+    "seniority_mid": ["senior", "sr.", "sr ", "lead", "head of", "director", "iii", "iv", "l5", "l6", "e6", "e7"],
+    "seniority_not_needed": ["architect", "engineering manager", "head of", "director", "tech lead", "technical lead", "lead"],
+    "exclude": ["sales", "marketing", "recruit", "talent", "account executive", "account manager", "customer success", "customer support", "support engineer", "technical support", "designer", "design ", "product manager", "program manager", "project manager", "finance", "accountant", "legal", "counsel", "people partner", "hr ", "human resources", "business development", "partnerships", "content", "writer", "frontend", "front-end", "front end", "ios", "android", "mobile", "ui engineer", "ux", "qa ", "quality assurance", "sdet", "test automation", "data scientist", "data analyst", "research scientist", "sales engineer", "solutions engineer", "pre-sales", "presales", "hardware", "firmware", "embedded", "mechanical", "electrical", "fpga", "asic", "manufacturing", "field engineer", "security analyst", "soc analyst", "office manager", "executive assistant", "compliance analyst", "gtm", "revenue", "re:\\bIT\\s*(&|and|support|helpdesk|operations|admin)"],
+    "junior": ["junior", "intern", "internship", "working student", "werkstudent", "graduate", "trainee", "apprentice", "entry level", "entry-level", "associate"],
+    "points": {
+      "strong": 30,
+      "generic": 15,
+      "high": 25,
+      "mid": 8,
+      "unclear_level_penalty": -10
+    }
+  },
+  "skills": {
+    "cap": 30,
+    "items": [
+      {
+        "name": "Kotlin",
+        "weight": 8,
+        "terms": ["kotlin"]
+      },
+      {
+        "name": "Java",
+        "weight": 4,
+        "terms": ["java"]
+      },
+      {
+        "name": "Spring",
+        "weight": 4,
+        "terms": ["spring boot", "spring cloud", "spring"]
+      },
+      {
+        "name": "AWS",
+        "weight": 8,
+        "terms": ["aws", "amazon web services"]
+      },
+      {
+        "name": "Kubernetes",
+        "weight": 7,
+        "terms": ["kubernetes", "k8s", "eks"]
+      },
+      {
+        "name": "Terraform",
+        "weight": 4,
+        "terms": ["terraform", "cloudformation", "infrastructure as code", "iac"]
+      },
+      {
+        "name": "Kafka",
+        "weight": 5,
+        "terms": ["kafka", "kinesis", "stream processing"]
+      },
+      {
+        "name": "Distributed systems",
+        "weight": 5,
+        "terms": ["distributed systems", "distributed system", "microservices", "multi-region", "high availability"]
+      },
+      {
+        "name": "Observability",
+        "weight": 6,
+        "terms": ["observability", "monitoring", "opentelemetry", "tracing"]
+      },
+      {
+        "name": "Datadog/Grafana",
+        "weight": 3,
+        "terms": ["datadog", "grafana", "splunk", "prometheus", "new relic", "newrelic"]
+      },
+      {
+        "name": "SRE practices",
+        "weight": 5,
+        "terms": ["slo", "slos", "sli", "error budget", "sre", "site reliability", "postmortem", "post-incident"]
+      },
+      {
+        "name": "Incident mgmt",
+        "weight": 3,
+        "terms": ["incident response", "incident management", "on-call", "on call"]
+      },
+      {
+        "name": "DynamoDB",
+        "weight": 3,
+        "terms": ["dynamodb"]
+      },
+      {
+        "name": "Python",
+        "weight": 2,
+        "terms": ["python"]
+      },
+      {
+        "name": "Compliance",
+        "weight": 3,
+        "terms": ["soc 2", "soc2", "iso 27001", "fedramp", "gdpr"]
+      },
+      {
+        "name": "Dev tools/platform",
+        "weight": 3,
+        "terms": ["developer platform", "developer tools", "internal developer", "developer productivity", "platform engineering"]
+      },
+      {
+        "name": "AI/agents",
+        "weight": 2,
+        "terms": ["llm", "ai agents", "agentic", "mcp"]
+      },
+      {
+        "name": "Graph DB",
+        "weight": 2,
+        "terms": ["neo4j", "graph database", "neptune", "gremlin"]
+      }
+    ]
+  },
+  "penalties": [
+    {
+      "label": "German required?",
+      "points": -12,
+      "terms": ["re:(fluent|proficient|excellent|native|business[- ]level|verhandlungssicher|sehr gute|very good|good)\\w*\\s+(in\\s+)?(written and spoken )?german", "re:german\\s*\\((c1|c2|b2)", "deutschkenntnisse", "fließend deutsch", "re:german language (skills )?(is |are )?(required|a must|mandatory)"]
+    },
+    {
+      "label": "Founding/always-on",
+      "points": -10,
+      "terms": ["founding engineer", "re:(hustle|grind|996|wear many hats).{0,20}"]
+    },
+    {
+      "label": "TS/Node stack",
+      "points": -5,
+      "terms": ["typescript", "node.js", "nodejs"],
+      "unless": ["kotlin", "java", "python", "golang"]
+    },
+    {
+      "label": "PHP/Ruby/.NET stack",
+      "points": -6,
+      "terms": ["php", "ruby on rails", "c#", ".net"],
+      "unless": ["kotlin", "java"]
+    }
+  ],
+  "compensation": {
+    "threshold_eur": 125000,
+    "above_points": 8,
+    "below_points": -8,
+    "fx_to_eur": {
+      "EUR": 1.0,
+      "USD": 0.92,
+      "GBP": 1.17,
+      "CHF": 1.05
+    }
+  },
+  "freshness": {
+    "fresh_days": 30,
+    "fresh_points": 4,
+    "stale_days": 180,
+    "stale_points": -4
+  },
+  "scoring": {
+    "min_score": 40,
+    "tier_top": 65,
+    "tier_good": 50,
+    "max_rows_maybe": 60,
+    "unspecified_remote_penalty": -6
+  }
+}

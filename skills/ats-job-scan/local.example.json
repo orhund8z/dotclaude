@@ -1,0 +1,11 @@
+{
+  "_help": "Copy to local.json (gitignored) and adjust. Every key is optional; paths may use ~.",
+  "output_dir": "~/ats-job-scan-reports",
+  "cache_dir": null,
+  "publish_cmd": null,
+  "publish_cwd": null,
+  "company_dirs": [],
+  "link_roots": [],
+  "extra_slugs_file": null,
+  "contact": ""
+}

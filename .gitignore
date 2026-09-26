@@ -13,3 +13,8 @@ skills/job-tracker/reports/
 
 # JetBrains IDE
 .idea/
+
+# ats-job-scan — personal filters and machine-specific paths (copy the *.example.json files)
+skills/ats-job-scan/config.json
+skills/ats-job-scan/local.json
+skills/ats-job-scan/reports/

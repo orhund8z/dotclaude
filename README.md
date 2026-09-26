@@ -17,6 +17,7 @@ dotclaude/
 │       ├── .claude-plugin/plugin.json
 │       └── skills/storm-analyzer/
 ├── skills/          # personal, unpublished skills (~/.claude/skills/)
+│   ├── ats-job-scan/
 │   ├── atlas/
 │   ├── job-evaluator/
 │   ├── job-tracker/
@@ -33,6 +34,7 @@ Skills are modular instruction packages for [Claude Code](https://docs.anthropic
 |-------|-------------|----------|
 | [job-evaluator](./skills/job-evaluator/) | Evaluates companies and offers against a personal career profile using Glassdoor, Kununu, Levels.fyi, Comprehensive.io, LinkedIn, Xing, Indeed.de, Monster.de, Remotely.de, Layoffs.fyi. Scores each opportunity with a **Career Value Index (CVI)** — total compensation, Fair Share Ratio (pay vs. what the company can afford), equity upside, career capital, and stability. | 🇬🇧 English |
 | [job-tracker](./skills/job-tracker/) | Watches a configured company list for openings that match your profile, and discovers other companies working on your topics that are hiring. Produces a self-contained HTML report in two groups — **Tracked** and **Suggested** — with `🆕` badges for postings new since the previous run. | 🇬🇧 English |
+| [ats-job-scan](./skills/ats-job-scan/) | Company-agnostic job radar: discovers thousands of Ashby and Greenhouse job boards (Common Crawl + local seeds), fetches them through the public APIs with per-host rate limiting, keeps Munich (any work model) or remote-Germany/Europe/worldwide roles, scores fit (title, skills, stated pay vs. threshold, freshness, penalties) and writes a **dated markdown report** with `🆕` for postings new since the last scan. Standard-library Python; `--rescore` re-tunes filters in seconds. | 🇬🇧 English |
 | [mcp-builder](./skills/mcp-builder/) | Scaffolds and implements TypeScript MCP servers — shared repo layout, tool-surface design, idempotency/conflict gating, tool annotations, resilience/cost guardrails, low/medium/high effort modes, existing-convention matching, and mandatory smoke-test verification (+ committed test suite at medium/high). Can delegate implementation/review to the `squad-*` subagents. | 🇬🇧 English |
 | [squad](./plugins/squad/skills/squad/) | Runs a full software development lifecycle (Analyze → Plan → Dev → Monitor) as a six-persona software company; orchestrates the `squad-*` subagents. Stack-agnostic, with low/medium/high effort modes, explore-the-existing-repo-first discipline, and durable `README.md`/`SPEC.md` deliverables. | 🇬🇧 English |
 | [storm-analyzer](./plugins/storm-analyzer/skills/storm-analyzer/) | Turns any topic into a structured, STORM-style analysis by simulating five expert perspectives, mapping contradictions, and synthesizing an executive-ready briefing with a role-tailored peer review. | 🇬🇧 English |
@@ -105,6 +107,7 @@ Some skills require external tools or API keys. See each skill's README for deta
 |-------|----------|
 | job-evaluator | Tavily MCP for web search (see [setup guide](./docs/tavily-mcp-setup.md)) |
 | job-tracker | Tavily MCP for web search (see [setup guide](./docs/tavily-mcp-setup.md)); local `CONFIG.md` copied from `CONFIG.example.md` |
+| ats-job-scan | Python 3.9+ (standard library only) and network access; local `config.json` and `local.json` copied from the `*.example.json` templates |
 | mcp-builder | Node.js (v22+ recommended), `@modelcontextprotocol/sdk` + `zod` + `tsx`/`typescript`/`vitest` (scaffolded automatically); TypeScript only |
 | squad | Nothing extra — the `squad-*` subagents ship inside the plugin |
 | storm-analyzer | None — self-contained prompt template |
