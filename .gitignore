@@ -1,6 +1,8 @@
 # Personal candidate profiles — contains private data (salary, employer, contact info)
 # Copy PROFILE.example.md → PROFILE.md and fill in your own details
 **/PROFILE.md
+# atlas child-health profile (lowercase name; needed on case-sensitive filesystems)
+**/profile.md
 
 # job-tracker — personal watchlist, run state, and generated reports
 # Copy CONFIG.example.md → CONFIG.md and fill in your own details
