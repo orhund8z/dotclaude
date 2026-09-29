@@ -28,11 +28,24 @@ The skill triggers automatically — no slash command needed.
 ## Installation
 
 ```
-/plugin marketplace add orhund8z/dotclaude
+/plugin marketplace add orhund8z/dotclaude      # once
 /plugin install job-evaluator@orhund8z
+/reload-plugins                                 # or restart Claude Code
 ```
 
-Restart Claude Code (or run `/reload-plugins`) afterwards. Web search works out of the box; the optional Tavily MCP server ([below](#search-tools--configuration)) makes it more thorough.
+Verify with `/plugin list --enabled`, then just ask:
+
+```
+Evaluate Zalando
+```
+
+The first run has no profile yet, so the skill starts the [guided setup](#setup-your-profile) and then continues with your request.
+
+From a shell: `claude plugin install job-evaluator@orhund8z` (add `--scope project` or `--scope local` to limit it to one repo).
+Update later with `claude plugin marketplace update orhund8z` and `claude plugin update job-evaluator@orhund8z`.
+If you used the old standalone symlink in `~/.claude/skills/job-evaluator`, remove it so the skill doesn't show up twice.
+
+Web search works out of the box; the optional Tavily MCP server ([below](#search-tools--configuration)) makes it more thorough.
 
 ## Setup Your Profile
 
@@ -131,7 +144,7 @@ Give it real numbers and it switches modes: your offer figures override the rese
 
 ## Requirements
 
-This skill uses web search to fetch live data. You need the **Tavily MCP server** configured in Claude Code.
+This skill uses web search to fetch live data. Claude Code's built-in `WebSearch`/`WebFetch` work out of the box; the **Tavily MCP server** is optional but recommended for deeper, more reliable results.
 
 ### Setup
 
@@ -142,16 +155,6 @@ claude mcp add tavily-mcp \
 ```
 
 Get a free API key at [tavily.com](https://tavily.com) (1,000 searches/month free).
-
-## Installation
-
-```bash
-cp -r skills/job-evaluator ~/.claude/skills/
-# or symlink:
-ln -s $(pwd)/skills/job-evaluator ~/.claude/skills/job-evaluator
-```
-
-Restart Claude Code after installation.
 
 ## Files
 

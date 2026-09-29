@@ -114,7 +114,7 @@ Produce one report per company using the template below. Write in **English**.
 ---
 
 ### 🏢 [COMPANY NAME]
-**📇 Künye:** First created: YYYY-MM-DD · Last evaluated: YYYY-MM-DD · Method: CVI v2
+**📇 Report info:** First created: YYYY-MM-DD · Last evaluated: YYYY-MM-DD · Method: CVI v2
 
 **Industry:** | **Size:** | **HQ:** | **Work Model:**
 
@@ -435,7 +435,7 @@ reported confidence at **Low** and say so in the verdict.
 The default v2 weights are 20/20/20/12/15/5/8. If PROFILE.md declares different priorities, re-weight — but
 **always print the weights actually used**. Reports scored under the earlier five-pillar CVI (25/20/20/25/10,
 compensation-led) are **not comparable** to v2 scores: when re-evaluating an old report, re-score every
-pillar rather than converting, and say "re-evaluated under CVI v2" in the künye.
+pillar rather than converting, and say "re-evaluated under CVI v2" in the report-info line.
 
 ---
 
@@ -507,9 +507,11 @@ Additionally:
 
 ---
 
-## Output & Indexing (career workspace)
+## Output & Indexing (optional doc-hub workspace)
 
-When this skill is run inside the career workspace (`~/workspace/career`), every analysis MUST be persisted as markdown **and** published as an indexed HTML page in the doc hub. Do this automatically — do not leave the report only in chat.
+**Applies only if `tools/publish_analysis.py` exists in the current working directory** (a personal doc-hub workspace that indexes analyses as HTML pages). If it does not exist, skip this whole section: answer in chat and, only if the user asks, save the report as a markdown file wherever they say.
+
+When the script is present, every analysis MUST be persisted as markdown **and** published as an indexed HTML page in the doc hub. Do this automatically — do not leave the report only in chat.
 
 1. **Write the markdown source** to `interviews/<company>/<name>.md` (e.g. `interviews/holidu/holidu-analysis.md`). The company is the slug the user gives or the company's name; `<name>` is descriptive (`<company>-analysis`, `<company>-em`, etc.). Never put `.html` in the source `interviews/` tree.
 2. **Publish + index in one step** by running the repo tool:
@@ -526,12 +528,12 @@ Conventions: source `.md` lives under `interviews/<company>/`; generated `.html`
 ## Behavioural Rules
 
 - Write in **English** regardless of the user's input language.
-- In the career workspace, always persist the report as markdown and publish it via `tools/publish_analysis.py` so it is indexed and navigable (see **Output & Indexing**).
+- Only if `tools/publish_analysis.py` exists in the working directory: persist the report as markdown and publish it via that script so it is indexed and navigable (see **Output & Indexing**). Otherwise do not create files or run scripts unprompted.
 - Never produce placeholder text in the final output — if data is missing, say so explicitly.
 - Do not add commentary beyond what was found in sources.
 - Do not suggest the candidate "may want to verify" something that you could search for yourself — search it first.
 - Use the salary threshold (base) and equity preference from PROFILE.md for ✅/⚠️/❌ in Candidate Fit. Under CVI v2 salary is a **threshold**, not a ranking criterion: an offer at or above the threshold is acceptable and must not be penalised for not being higher.
-- **Every report opens with the künye line:** `**📇 Künye:** First created: YYYY-MM-DD · Last evaluated: YYYY-MM-DD · Method: CVI v2`. On a new report both dates are today. On a re-evaluation **keep the original First created date** (take it from the existing report's date line; if it has none, from the file's creation/first-commit date) and set Last evaluated to today. Never overwrite First created.
+- **Every report opens with the report-info line:** `**📇 Report info:** First created: YYYY-MM-DD · Last evaluated: YYYY-MM-DD · Method: CVI v2`. On a new report both dates are today. On a re-evaluation **keep the original First created date** (take it from the existing report's report-info line — an older `**📇 Künye:**` line means the same thing and is read the same way — or its date line; if it has none, from the file's creation/first-commit date) and set Last evaluated to today. Never overwrite First created.
 - Employee Happiness must be backed by independent review data. No data → cap the pillar at 10 and cap confidence at Low; never infer happiness from job-post language.
 - Layoffs within the last 12 months: flag as ⚠️ in both QUICK OVERVIEW and CANDIDATE FIT.
 - **Never report base salary as if it were the package** — always produce the Total Compensation breakdown.
