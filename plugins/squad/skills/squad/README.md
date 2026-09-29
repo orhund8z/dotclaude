@@ -158,9 +158,20 @@ default and moves on.
 Install the `squad` plugin — it bundles this skill and the six `squad-*` personas (`../../agents/`):
 
 ```
-/plugin marketplace add orhund8z/dotclaude
+/plugin marketplace add orhund8z/dotclaude      # once
 /plugin install squad@orhund8z
+/reload-plugins                                 # or restart Claude Code
 ```
+
+Verify with `/plugin list --enabled`, then try:
+
+```
+Assemble the squad to build a URL shortener service
+```
+
+Only want it in one repo? `claude plugin install squad@orhund8z --scope project` (shared with the team) or `--scope local` (just you).
+The personas are invoked as `squad:squad-ceo`, `squad:squad-architect`, and so on. If you previously symlinked the old standalone
+files into `~/.claude/skills/squad` or `~/.claude/agents/`, remove them so nothing shows up twice.
 
 See the repo root [README](../../../../README.md#installation) for details.
 

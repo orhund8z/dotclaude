@@ -53,13 +53,22 @@ No MCP servers or API keys are required.
 ## Installation
 
 ```
-/plugin marketplace add orhund8z/dotclaude
+/plugin marketplace add orhund8z/dotclaude      # once
 /plugin install storm-analyzer@orhund8z
+/reload-plugins                                 # or restart Claude Code
 ```
 
-Or copy it manually: `cp -r plugins/storm-analyzer/skills/storm-analyzer ~/.claude/skills/`.
+Verify with `/plugin list --enabled`, then try (installed as a plugin, the slash command is namespaced):
 
-Restart Claude Code after installation.
+```
+/storm-analyzer:storm-analyzer LLM-based code review tools | Principal Engineer
+```
+
+From a shell: `claude plugin install storm-analyzer@orhund8z` (add `--scope project` to share it with a repo's team).
+Update later with `claude plugin marketplace update orhund8z` and `claude plugin update storm-analyzer@orhund8z`.
+
+Manual alternative (no plugin): `cp -r plugins/storm-analyzer/skills/storm-analyzer ~/.claude/skills/`, then restart Claude Code.
+Don't do both — the skill would show up twice.
 
 ## Files
 

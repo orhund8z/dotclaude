@@ -61,18 +61,75 @@ The specification these are generated from lives at [`prompts/squad.md`](./promp
 
 ### Install as plugins (marketplace)
 
-`job-evaluator`, `squad` (skill + persona agents) and `storm-analyzer` are published as plugins through the
-`orhund8z` marketplace defined in [`.claude-plugin/marketplace.json`](./.claude-plugin/marketplace.json).
-Installing `squad` gives you both the skill and its six `squad-*` agents — nothing else to set up.
+Three plugins are published through the `orhund8z` marketplace, defined in
+[`.claude-plugin/marketplace.json`](./.claude-plugin/marketplace.json):
+
+| Plugin | What you get | Try it after installing |
+|--------|--------------|-------------------------|
+| `job-evaluator` | Company / offer evaluation with a Career Value Index; guided profile setup on first use | `Evaluate Zalando` |
+| `squad` | The `squad` skill plus its six `squad:squad-*` persona agents | `Assemble the squad to build a URL shortener service` |
+| `storm-analyzer` | Multi-area research briefing with contradictions and ranked findings | `/storm-analyzer:storm-analyzer Should we adopt a service mesh? \| Principal Engineer` |
+
+**1. Add the marketplace (once)**
 
 ```
 /plugin marketplace add orhund8z/dotclaude
+```
+
+Same thing from a shell: `claude plugin marketplace add orhund8z/dotclaude`.
+`orhund8z/dotclaude` is the GitHub `owner/repo`; a full git URL or a local path also works
+(handy for testing unpushed changes: `/plugin marketplace add ~/dotclaude`).
+
+**2. Install the plugins you want**
+
+```
 /plugin install job-evaluator@orhund8z
 /plugin install squad@orhund8z
 /plugin install storm-analyzer@orhund8z
 ```
 
-Validate after editing: `claude plugin validate .`
+Or from a shell: `claude plugin install squad@orhund8z`. Prefer a menu? Run `/plugin`, open **Discover**,
+pick a plugin, and choose an install scope.
+
+**3. Activate**
+
+Run `/reload-plugins` (or restart Claude Code). Plugin skills are namespaced, so `squad:squad` and
+`storm-analyzer:storm-analyzer` are their full names (use them for slash commands); natural-language triggers work as before.
+
+**4. Verify**
+
+```
+/plugin list --enabled
+```
+
+You should see `job-evaluator@orhund8z`, `squad@orhund8z`, `storm-analyzer@orhund8z`, each marked enabled.
+
+**Install scopes**
+
+| Scope | Flag | Where it applies | Example |
+|-------|------|------------------|---------|
+| user (default) | `--scope user` | All your projects | `claude plugin install storm-analyzer@orhund8z` |
+| project | `--scope project` | This repo only, shared with the team via `.claude/settings.json` | `claude plugin install squad@orhund8z --scope project` |
+| local | `--scope local` | This repo only, just you (not committed) | `claude plugin install squad@orhund8z --scope local` |
+
+**Update, disable, remove**
+
+```
+claude plugin marketplace update orhund8z     # pull the latest catalog
+claude plugin update squad@orhund8z           # then restart Claude Code to apply
+claude plugin disable squad@orhund8z          # keep installed, turn off
+claude plugin uninstall squad@orhund8z
+claude plugin marketplace list                # registered marketplaces
+```
+
+**Per-plugin notes**
+
+- **job-evaluator** — On first use there is no profile yet, so it interviews you (roles, priorities, salary floor, tech, dealbreakers) and saves it to `~/.claude/job-evaluator/PROFILE.md`, outside the plugin, so updates never overwrite it. Re-run it any time with `update my profile`. Web search works out of the box; the Tavily MCP server ([setup guide](./docs/tavily-mcp-setup.md)) is optional but more thorough.
+- **squad** — Nothing else to set up; the personas ship inside the plugin and are invoked as `squad:squad-ceo`, `squad:squad-architect`, and so on.
+- **storm-analyzer** — Runs the 5 research areas as parallel subagents and uses web search for source links, so it works best with both available.
+- **Already installed the old standalone copies?** If you previously symlinked these into `~/.claude/skills/` or `~/.claude/agents/`, remove them after installing the plugin, otherwise each skill shows up twice.
+
+Validate the marketplace after editing it: `claude plugin validate .`
 
 ### Install a personal skill globally (available in all projects)
 
@@ -83,14 +140,14 @@ git clone https://github.com/orhund8z/dotclaude.git ~/dotclaude
 # Symlink a skill into Claude Code's skills directory
 mkdir -p ~/.claude/skills
 
-mkdir -p ~/.claude/skills/job-evaluator
-ln -s ~/dotclaude/skills/job-evaluator/SKILL.md ~/.claude/skills/job-evaluator/SKILL.md
+mkdir -p ~/.claude/skills/mcp-builder
+ln -s ~/dotclaude/skills/mcp-builder/SKILL.md ~/.claude/skills/mcp-builder/SKILL.md
 ```
 
 Or copy manually:
 
 ```bash
-cp -r ~/dotclaude/skills/job-evaluator ~/.claude/skills/
+cp -r ~/dotclaude/skills/mcp-builder ~/.claude/skills/
 ```
 
 Then restart Claude Code — the skill auto-loads on session start.
@@ -99,7 +156,7 @@ Then restart Claude Code — the skill auto-loads on session start.
 
 ```bash
 mkdir -p .claude/skills
-ln -s ~/dotclaude/skills/job-evaluator .claude/skills/job-evaluator
+ln -s ~/dotclaude/skills/mcp-builder .claude/skills/mcp-builder
 ```
 
 ## Dependencies
