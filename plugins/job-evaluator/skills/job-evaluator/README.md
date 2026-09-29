@@ -4,7 +4,7 @@ A Claude Code skill that evaluates companies against a personal career profile. 
 
 It also scores each opportunity with a **Career Value Index (CVI)** — a 0–100 estimate of long-term career value rather than headline salary. See [The Career Value Index](#the-career-value-index-cvi).
 
-The skill is **profile-driven**: it reads `PROFILE.md` before every run and tailors all fit assessments, salary thresholds, and role filters to whoever is using it. Anyone can use it by editing their own `PROFILE.md`.
+The skill is **profile-driven**: it reads your `PROFILE.md` before every run and tailors all fit assessments, salary thresholds, and role filters to whoever is using it. Anyone can use it — the setup interview builds their profile.
 
 ## Usage
 
@@ -25,15 +25,28 @@ I have two offers: N26 €130k base + 10% bonus, and Celonis €120k + VSOP. Whi
 
 The skill triggers automatically — no slash command needed.
 
-## Setup Your Profile
+## Installation
 
-`PROFILE.md` is gitignored — your personal data (salary, employer, contact info) never gets committed.
-
-```bash
-cp PROFILE.example.md PROFILE.md
+```
+/plugin marketplace add orhund8z/dotclaude
+/plugin install job-evaluator@orhund8z
 ```
 
-Then open `PROFILE.md` and fill in your details:
+Restart Claude Code (or run `/reload-plugins`) afterwards. Web search works out of the box; the optional Tavily MCP server ([below](#search-tools--configuration)) makes it more thorough.
+
+## Setup Your Profile
+
+On first use the skill notices there is no profile and starts a **guided setup** instead of evaluating: it asks
+a few rounds of short multiple-choice questions (who you are and what role you want next, ranked priorities,
+salary floor and equity, tech strengths, industries, dealbreakers and constraints) and writes the result for you.
+Then it continues with the evaluation you originally asked for.
+
+- Start it explicitly any time: `setup job-evaluator`, `update my profile`, or `/job-evaluator setup`.
+- The profile is saved to **`~/.claude/job-evaluator/PROFILE.md`** — outside the plugin, so updates never overwrite it and it is never committed.
+- Prefer to fill it in by hand? Copy `PROFILE.example.md` from the plugin to that path and edit it.
+- Updating an existing profile shows what is there, changes only the sections you pick, and keeps a `PROFILE.md.bak`.
+
+The profile covers:
 
 - Name and current role
 - Target roles (Principal, Staff, SRE, EM, etc.)
@@ -41,7 +54,7 @@ Then open `PROFILE.md` and fill in your details:
 - Work model preferences (remote / hybrid / city)
 - Minimum base salary and equity expectations
 - Language requirements
-- Industry preferences
+- Industry preferences, dealbreakers, and priorities (which set the CVI weights)
 
 The skill reads this file at runtime. **All fit assessments are derived from your profile** — the skill will not use hardcoded assumptions.
 
@@ -145,8 +158,9 @@ Restart Claude Code after installation.
 | File | Purpose |
 |------|---------|
 | `SKILL.md` | Skill definition — instructions, research steps, report template |
-| `PROFILE.example.md` | Generic profile template — copy to `PROFILE.md` and fill in your details |
-| `PROFILE.md` | Your personal profile — **gitignored**, never committed |
+| `SETUP.md` | Guided profile-setup interview, run when no profile exists |
+| `PROFILE.example.md` | Generic profile template the setup follows |
+| `~/.claude/job-evaluator/PROFILE.md` | Your personal profile — lives outside the plugin, never committed |
 | `README.md` | This file |
 
 ## Search Tools & Configuration

@@ -1,7 +1,9 @@
 # Candidate Profile — Example
 
-> This is an example profile. Copy it to `PROFILE.md` and replace the values with your own.
-> `PROFILE.md` is gitignored — your personal data stays local.
+> This is the template the guided setup follows. You normally don't edit it: on first use the skill interviews you
+> and writes your profile to `~/.claude/job-evaluator/PROFILE.md`. To fill it in by hand instead, copy this file
+> to that path and replace the values with your own. That location is outside the plugin, so your data stays local
+> and survives plugin updates.
 
 ---
 

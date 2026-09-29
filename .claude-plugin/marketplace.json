@@ -7,6 +7,7 @@
     "description": "Claude Code skills and agents by Orhun Dalabasmaz"
   },
   "plugins": [
+    { "name": "job-evaluator", "source": "./plugins/job-evaluator" },
     { "name": "squad", "source": "./plugins/squad" },
     { "name": "storm-analyzer", "source": "./plugins/storm-analyzer" }
   ]

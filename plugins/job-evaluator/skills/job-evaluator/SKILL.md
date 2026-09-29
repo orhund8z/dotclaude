@@ -1,6 +1,6 @@
 ---
 name: job-evaluator
-description: Given one or more company names, URLs, or offers, produces a comprehensive job evaluation report tailored to the candidate profile defined in PROFILE.md, including a Career Value Index (CVI) that scores total compensation, how generously the company pays relative to its own capacity (Fair Share Ratio), equity upside, career capital, and stability. Searches Glassdoor, Kununu, Levels.fyi, LinkedIn, Remotely.de, Xing, Indeed.de, Monster.de, Comprehensive.io, Layoffs.fyi, Hiring.cafe, Builtin.com, and Wellfound.com. Use this skill when the user provides company names, URLs, or offers, researches job listings, or uses phrases like "evaluate this company", "should I apply here", "compare these offers", "which offer should I take", "what's the salary", "is this a fair offer", "what are the employee reviews", "compare these companies".
+description: Given one or more company names, URLs, or offers, produces a comprehensive job evaluation report tailored to the candidate profile defined in PROFILE.md, including a Career Value Index (CVI v2) that scores business domain and value of the work, tech-stack fit, employee happiness, career capital, compensation vs. threshold (with Fair Share Ratio), equity upside, and stability. Searches Glassdoor, Kununu, Levels.fyi, LinkedIn, Remotely.de, Xing, Indeed.de, Monster.de, Comprehensive.io, Layoffs.fyi, Hiring.cafe, Builtin.com, and Wellfound.com. Use this skill when the user provides company names, URLs, or offers, researches job listings, or uses phrases like "evaluate this company", "should I apply here", "compare these offers", "which offer should I take", "what's the salary", "is this a fair offer", "what are the employee reviews", "compare these companies". Also use it for "setup job-evaluator" / "update my profile": if no candidate PROFILE.md exists yet, it first runs a guided setup interview to capture the user's expectations.
 ---
 
 # Job Evaluator Skill
@@ -10,17 +10,23 @@ description: Given one or more company names, URLs, or offers, produces a compre
 Act as an experienced **career advisor, compensation consultant, and software hiring manager** with deep
 knowledge of the European and US technology markets.
 
-The job is **not** to compare salaries. It is to estimate the **long-term career value** of each opportunity:
+The job is **not** to compare salaries. The candidate's priorities (see PROFILE.md) put **business domain, tech stack, employee happiness and the value of the work** ahead of compensation; pay only has to clear the PROFILE threshold. Estimate the **long-term career value** of each opportunity:
 what the candidate earns today, what the company could have paid, what the equity is realistically worth,
 what the role does to the candidate's market value in 2–5 years, and what it costs them in stability and
 work-life balance. Two offers with identical base salaries are rarely worth the same thing.
 
 ## Step 0 — Load Candidate Profile
 
-Before doing anything else, read the file `PROFILE.md` located in the same directory as this skill.
-Extract the candidate's name, target roles, tech stack, work model preferences, salary floor, equity expectation, and all other fields.
-Use this profile to personalise every section of the report.
-If `PROFILE.md` cannot be found, ask the user to provide their profile before continuing.
+Before doing anything else, locate the candidate's `PROFILE.md`. Check these paths in order and use the first that exists:
+
+1. `~/.claude/job-evaluator/PROFILE.md` — the default location. It lives outside the plugin directory, so plugin updates never overwrite it.
+2. `PROFILE.md` in the same directory as this skill — legacy location for standalone (non-plugin) installs.
+
+If a profile is found, extract the candidate's name, target roles, tech stack, work model preferences, salary floor, equity expectation, priorities, and all other fields, and use them to personalise every section of the report.
+
+**If no profile is found — or it is still the untouched template (unreplaced `[e.g. …]` placeholders) — do not continue with the evaluation.** Tell the user in one or two lines that no profile exists yet and that you will set one up first, then run the **Setup flow** in `SETUP.md` (same directory as this skill). Once the profile is written, resume the original evaluation request without asking the user to repeat it.
+
+The user can also trigger setup explicitly with "setup job-evaluator", "update my profile", or `/job-evaluator setup`. In that case run `SETUP.md` even if a profile already exists (it will offer to update rather than overwrite).
 
 ---
 
@@ -59,6 +65,14 @@ Run the following web searches for each company provided. Parallelize where poss
 ### Reviews & Ratings
 1. **Glassdoor:** `[company name] Glassdoor reviews` → overall rating, CEO approval %, recommendation rate, top pros/cons
 2. **Kununu:** `[company name] Kununu Bewertungen` → German-market employee reviews and rating
+
+**Employee-happiness depth (feeds the Employee Happiness pillar).** Beyond the headline rating, search the
+function-specific view: `[company] Glassdoor software engineer reviews`, CEO approval and recommend %, work-life
+balance sub-rating, and recurring themes (burnout, turnover, management, layoffs morale). If engineering-specific
+numbers exist and are lower than the company average, report both.
+
+**Domain & product (feeds the Domain & Work Value pillar).** Search what the company does, who its customers are,
+its market position and whether the domain is growing or fragile: `[company] product customers business model`.
 
 ### Compensation
 3. **Levels.fyi:** `[company name] levels.fyi engineer salary Germany` → salary by level, location
@@ -100,6 +114,8 @@ Produce one report per company using the template below. Write in **English**.
 ---
 
 ### 🏢 [COMPANY NAME]
+**📇 Künye:** First created: YYYY-MM-DD · Last evaluated: YYYY-MM-DD · Method: CVI v2
+
 **Industry:** | **Size:** | **HQ:** | **Work Model:**
 
 #### ⚡ QUICK OVERVIEW
@@ -148,18 +164,50 @@ Quantify benefits only where a concrete figure is findable or derivable (e.g. "3
 #### 🎯 CANDIDATE FIT
 Evaluate against the candidate profile loaded from PROFILE.md. Adapt criteria to the profile.
 
+Before filling the table, run the **Role & Seniority Fit Check** below — its outputs feed the first two rows.
+
 | Criteria | Status | Notes |
 |----------|--------|-------|
+| Seniority / Level Alignment | ✅/⚠️/❌ | [JD-stated YOE/level vs. candidate's actual experience — see check below] |
+| Work Intensity Signal | ✅/⚠️/❌ | [any explicit hours/intensity/hustle language quoted verbatim, or "none found"] |
+| Domain & Work Value | ✅/⚠️/❌ | [business domain vs. PROFILE industry preferences; value/impact of the work] |
 | Tech Stack alignment | ✅/⚠️/❌ | [which stack was confirmed, which was not found] |
+| Employee Happiness | ✅/⚠️/❌ | [Glassdoor/Kununu incl. engineering-specific; recommend %; WLB; themes] |
 | Target Role Available | ✅/⚠️/❌ | [role name or "none found"] |
 | Work Model match | ✅/⚠️/❌ | [remote/hybrid/on-site — city if relevant] |
-| Salary meets floor | ✅/⚠️/❌ | [salary found vs. floor from profile] |
+| Salary meets threshold | ✅/⚠️/❌ | [salary found vs. the PROFILE base threshold] |
 | Equity Available | ✅/⚠️/❌ | [type if found, ⚠️ if not found] |
 | Required working language | ✅/⚠️/❌ | [English/other] |
 | Engineering / IC Culture | ✅/⚠️/❌ | [based on reviews — only if explicitly mentioned] |
 | Company Stability | ✅/⚠️/❌ | [layoff history, funding, profitability] |
 
 > ⚠️ Only mark ✅ or ❌ if a data point was explicitly found. Use ⚠️ when uncertain due to missing data.
+
+##### Role & Seniority Fit Check
+
+Two failure modes matter equally: the role can be a **poor fit because it's below the candidate's level**, not
+just because it fails on comp or stack. Run this check on every JD before scoring Candidate Fit:
+
+1. **Seniority mismatch.** Extract any years-of-experience or level language the JD states explicitly
+   (e.g. "3–5 years of experience is a plus", "8+ years", "senior IC"). Compare it against the candidate's
+   actual experience from PROFILE.md. A JD scoped meaningfully below the candidate's level is a real
+   finding — it usually means the role's actual day-to-day scope (and the peer group) is more junior than
+   the title implies, regardless of what the title says ("Founding Engineer", "Staff", etc. are not
+   self-certifying). Call this out directly in the Rationale, don't just note it in passing.
+2. **Stack mismatch vs. the candidate's core strength, not just keyword presence.** A JD can technically
+   list a tech the candidate has touched while still asking them to operate primarily outside their
+   strongest area (e.g. a backend/SRE profile applying to a role that wants "strong frontend affinity" as
+   the primary skill). Say explicitly which parts of the stack play to the candidate's strength and which
+   would be a steep, real-time ramp under production pressure.
+3. **Explicit intensity/hustle language.** Scan the JD for direct statements about hours, pace, or
+   always-on expectations — phrases like "higher intensity than a traditional 9–5", "high agency",
+   "wear many hats", "founder mindset", "move fast". **Quote them verbatim** rather than paraphrasing or
+   softening them — an explicit line in the posting is a stronger, more citable signal than an inferred
+   vibe. Cross-reference against the candidate's **life-stage / capacity constraint** in PROFILE.md (if
+   set) and flag directly if the two conflict — this is not a minor caveat, it's often the deciding factor.
+4. **Company-stage risk multiplier.** Small headcount (roughly <20–30 employees) combined with intensity
+   language compounds the risk: there's no backup, no slack, and personal capacity constraints bite harder.
+   Name this combination explicitly when both are present.
 
 #### 💼 OPEN POSITIONS
 Consolidate all relevant roles found across job sources. Only include roles matching the candidate's target roles.
@@ -187,20 +235,24 @@ List every source searched and whether it returned relevant data:
 - 🚀 Wellfound.com: [link or "no results"]
 - 🏢 Careers Page: [link or "no results"]
 
-#### 🧭 CAREER VALUE INDEX (CVI)
+#### 🧭 CAREER VALUE INDEX (CVI v2)
 
-A 0–100 score of the opportunity's **long-term career value**, not its salary. Full method in
-[Career Value Index](#career-value-index-cvi--method) below.
+A 0–100 score of the opportunity's **long-term career value**. Under CVI v2 the score is led by **what the
+work is and who you do it with** (domain, tech stack, employee happiness, value of the work); compensation
+is a threshold criterion, not the main driver. Full method in
+[Career Value Index](#career-value-index-cvi-v2--method) below.
 
 **CVI: XX / 100 — [Band]** · Confidence: High / Medium / Low
 
 | Pillar | Score | Weight | What drove it |
 |--------|-------|--------|---------------|
-| 💶 Total Compensation | XX / 25 | 25% | position in market band |
-| ⚖️ Fair Share Ratio | XX / 20 | 20% | pay vs. what the company can afford |
-| 📈 Equity Upside | XX / 20 | 20% | instrument, stage, exit probability |
-| 🚀 Career Capital | XX / 25 | 25% | CV value, scope, learning, promotion path |
-| 🛡️ Stability & Sustainability | XX / 10 | 10% | runway, layoffs, WLB, on-call |
+| 🎯 Domain & Work Value | XX / 20 | 20% | business domain, mission, value/impact of the work |
+| 🧰 Tech Stack Fit | XX / 20 | 20% | overlap with primary stack and core strength |
+| 😊 Employee Happiness | XX / 20 | 20% | Glassdoor/Kununu (engineering-specific), recommend %, WLB, culture themes |
+| 🚀 Career Capital | XX / 12 | 12% | scope, brand, learning, promotion path, peers |
+| 💶 Compensation & Fair Share | XX / 15 | 15% | TC vs. PROFILE threshold and band (10) + pay vs. company capacity (5) |
+| 📈 Equity Upside | XX / 5 | 5% | instrument, stage, exit probability |
+| 🛡️ Stability & Sustainability | XX / 8 | 8% | runway, layoffs, on-call, intensity language |
 
 **Fair Share Ratio: X.XX** — [one line: what the company can afford vs. what it is offering]
 
@@ -227,93 +279,141 @@ This is the paragraph the candidate actually reads.
 
 ---
 
-## Career Value Index (CVI) — Method
+## Career Value Index (CVI v2) — Method
 
-The CVI exists because **the offered salary alone does not tell you what a company thinks you are worth.**
-A company with €5 that pays you €5 values you far more than a company with €100 that pays you €10 — and if
-the first company grows, the package grows with it. The CVI prices that in.
+CVI v2 reflects the candidate's declared priorities in PROFILE.md: **business domain, tech stack, employee
+happiness, and the value of the work come first; compensation only has to clear the threshold** (base ≥ the
+PROFILE floor — offers above it are all "acceptable", and extra euros add comparatively
+little). Score each pillar, then sum. Show the arithmetic — never present a score without its inputs.
 
-Score each pillar, then sum. Show the arithmetic — never present a score without its inputs.
+Default weights (sum 100): **Domain & Work Value 20 · Tech Stack Fit 20 · Employee Happiness 20 ·
+Career Capital 12 · Compensation & Fair Share 15 · Equity Upside 5 · Stability & Sustainability 8.**
 
-### 💶 Pillar 1 — Total Compensation (0–25)
+### 🎯 Pillar 1 — Domain & Work Value (0–20)
 
-Uses the **Total Compensation** figure computed above, against the market band for that role, level, and
-location (Levels.fyi / Comprehensive.io).
+How much the business the candidate would work in is worth working in, and how much the work itself matters.
 
-| Position in market band | Score |
-|-------------------------|-------|
-| ≥ p90 | 23–25 |
-| p75–p90 | 19–22 |
-| p50–p75 | 13–18 |
-| p25–p50 | 7–12 |
-| < p25 | 0–6 |
-
-Then apply the PROFILE.md salary floor as a hard gate: TC below the floor caps this pillar at **10**,
-regardless of band, and is flagged in the verdict.
-
-### ⚖️ Pillar 2 — Fair Share Ratio (0–20)
-
-**The differentiating pillar.** It measures generosity *relative to capacity* — does this company pay well
-for what it is, or is it a rich company making a cheap offer?
-
-**FSR = (offered TC) ÷ (TC this company's capacity and stage would support for this level)**
-
-Estimate the denominator from the Company Capacity searches:
-
-- **Public / profitable:** revenue per employee, gross margin, published comp bands, peer benchmarks.
-- **Funded startup:** total raised, last round size and date, valuation, headcount, implied runway. A
-  well-funded company with a thin offer scores low; a lean company stretching to pay market scores high.
-- **Bootstrapped / profitable SME:** revenue per employee and margin, not funding.
-
-| FSR | Reading | Score |
-|-----|---------|-------|
-| ≥ 1.20 | Pays above what its size implies — genuinely investing in this hire | 18–20 |
-| 1.00–1.20 | Pays fully what it can afford | 14–17 |
-| 0.85–1.00 | Slightly under its own capacity | 9–13 |
-| 0.65–0.85 | Underpays relative to what it holds | 4–8 |
-| < 0.65 | Rich company, cheap offer — a signal about how it will treat you later | 0–3 |
-
-State the denominator and where it came from. If capacity cannot be estimated at all, score this pillar
-`n/a`, redistribute its weight proportionally across the other four, and say so.
-
-### 📈 Pillar 3 — Equity Upside (0–20)
-
-Risk-adjusted, not headline. `Expected value = grant value × plausible multiple × exit probability × (1 − dilution)`.
-
-Assess: stage and valuation trajectory · instrument (RSU ≫ option ≫ VSOP/phantom) · strike price and
-preference stack · vesting, cliff, and post-termination exercise window · IPO/M&A signals · secondary
-market liquidity.
+- **Domain attractiveness** vs. PROFILE industry preferences (its preferred, open-to, and avoid lists — anything
+  on the avoid list scores low).
+- **Mission / value of the work** — does the product solve a real problem for real users? Is the candidate's
+  work close to the core of that value (platform/reliability that the whole product stands on) or peripheral?
+- **Problem hardness & scale** — interesting distributed-systems / reliability problems the candidate cannot get
+  elsewhere.
+- **Market position** — is the domain growing, shrinking, or regulatorily fragile?
 
 | Situation | Score |
 |-----------|-------|
-| Public RSUs, or late-stage with credible near-term liquidity | 15–20 |
-| Growth-stage equity, real upside, real risk | 9–14 |
-| Early-stage options with meaningful multiple but low exit probability | 5–10 |
-| VSOP/phantom only, or nominal grant, or opaque terms | 1–5 |
+| Preferred domain, mission the candidate would proudly own, work at the product core | 16–20 |
+| Preferred/open domain, solid mission, meaningful but not core work | 11–15 |
+| Neutral domain or peripheral work | 6–10 |
+| Domain the candidate is indifferent to or work of low consequence | 0–5 |
+
+### 🧰 Pillar 2 — Tech Stack Fit (0–20)
+
+Judge the stack against the candidate's **core strength** as declared in PROFILE.md (primary languages,
+frameworks, cloud, data, domain expertise), not just keyword presence. A role that lists a tech the
+candidate has touched but asks them to work primarily outside their strongest area is a **ramp**, not a fit.
+
+| Situation | Score |
+|-----------|-------|
+| Primary languages and platform match; role plays to core strength (e.g. SRE/platform/distributed backend) | 16–20 |
+| Most of the stack matches; one meaningful piece (cloud, database, secondary language) is new | 11–15 |
+| Mixed — several core pieces are new, or a strong-fit domain with a weaker-fit stack | 6–10 |
+| Primary language/area is outside the candidate's stack (steep ramp under delivery pressure) | 0–5 |
+
+State which parts play to strength and which would be a real-time ramp.
+
+### 😊 Pillar 3 — Employee Happiness (0–20)
+
+How content the people doing this work are. **Use function-specific data when it exists** (Glassdoor
+"Software Engineer" reviews, CEO approval among engineers) — if it diverges from the company-wide number, the
+lower one governs, because the candidate joins the function, not the company average.
+
+Inputs: Glassdoor and Kununu rating, recommend-to-a-friend %, CEO approval, work-life balance sub-rating,
+culture/management themes in reviews (burnout, turnover, micromanagement, layoffs morale, psychological safety),
+attrition signals.
+
+| Situation | Score |
+|-----------|-------|
+| ≥ 4.2/5 and ≥ 80% recommend, no serious recurring complaints | 17–20 |
+| 3.8–4.2/5, or strong overall with minor flagged themes | 13–16 |
+| 3.4–3.8/5, mixed themes | 9–12 |
+| 3.0–3.4/5, or recurring burnout/turnover/management themes | 5–8 |
+| < 3.0/5, or a sharp engineering-specific red flag (e.g. rating or CEO approval far below company average) | 0–4 |
+
+**No independent reviews at all** (tiny/new company): cap at **10** and lower the CVI confidence — absence of
+data is not evidence of happiness. Never fill the gap from impressions; a founder-authored job post is not a
+review.
+
+### 🚀 Pillar 4 — Career Capital (0–12)
+
+What this role does to the candidate's market value — the pillar that compounds: brand value on a CV in 2–5
+years, engineering reputation, scope & decision authority, learning, a real Staff/Principal ladder, peer quality.
+Score against the candidate's **target roles** in PROFILE.md: a lateral role scores lower than one that opens
+the next level.
+
+| Situation | Score |
+|-----------|-------|
+| Opens the next level or adds a clearly valuable new dimension; strong brand/peers | 10–12 |
+| Solid step, some new scope or brand value | 7–9 |
+| Lateral | 4–6 |
+| Lateral-to-backward or dead-end scope | 0–3 |
+
+### 💶 Pillar 5 — Compensation & Fair Share (0–15)
+
+Compensation is a **threshold**, not a race. Two sub-scores:
+
+**5a. Total Compensation vs. threshold (0–10).** Uses the Total Compensation figure computed above.
+
+| Situation | Score |
+|-----------|-------|
+| Base/TC clearly above the floor and at or above the market band's p50 | 8–10 |
+| At or above the PROFILE floor (base), below p50 of its band | 6–7 |
+| Just below the floor (within ~5%) or range straddles it | 4–5 |
+| Clearly below the floor | 0–3 |
+
+Hard gate: base below the PROFILE floor caps 5a at **5** and is flagged in the verdict. Comp disclosed as
+"data not available" is scored on the market band for the role, flagged, and reduces confidence.
+
+**5b. Fair Share Ratio (0–5).** FSR = (offered TC) ÷ (TC this company's capacity and stage would support for
+this level). Estimate the denominator from company capacity: revenue/employee and margin for profitable
+firms; funding, valuation, headcount and runway for startups; peer benchmarks. If capacity cannot be
+estimated, score `n/a` and scale 5a to 15.
+
+| FSR | Score |
+|-----|-------|
+| ≥ 1.00 | 4–5 |
+| 0.85–1.00 | 3 |
+| 0.65–0.85 | 1–2 |
+| < 0.65 | 0 |
+
+State the denominator and where it came from. Where FSR is low, say what the company could afford and by how much.
+
+### 📈 Pillar 6 — Equity Upside (0–5)
+
+Risk-adjusted, not headline: `grant value × plausible multiple × exit probability × (1 − dilution)`. Instrument
+(RSU ≫ option ≫ VSOP/phantom), strike, preference stack, vesting, cliff, exercise window, IPO/M&A signals.
+
+| Situation | Score |
+|-----------|-------|
+| Public RSUs, or late-stage with credible near-term liquidity | 4–5 |
+| Growth-stage equity with real upside and real risk | 3 |
+| Early-stage options, low exit probability | 2 |
+| VSOP/phantom only, nominal grant, or opaque terms | 1 |
 | No equity | 0 |
 
-An unclear preference stack or a 90-day exercise window is a **downgrade**, not a neutral. Say why.
+An unclear preference stack or a 90-day exercise window is a **downgrade**, not a neutral. Equity is now a
+minor pillar (5%): PROFILE lists it as preferred, not required.
 
-### 🚀 Pillar 4 — Career Capital (0–25)
+### 🛡️ Pillar 7 — Stability & Sustainability (0–8)
 
-What this role does to the candidate's market value — the pillar that compounds.
+Runway/profitability, layoffs in the last 12–24 months, leadership churn, work-life balance and on-call load,
+attrition signals.
 
-- **Brand value on a CV in 2–5 years** — does the name open doors in this market?
-- **Engineering reputation** — how engineers (not recruiters) regard the org: technical excellence, quality bar.
-- **Scope & impact** — ownership, blast radius, decision authority vs. ticket execution.
-- **Learning** — scale, domain, and technology the candidate cannot get elsewhere.
-- **Promotion path** — is there a real Staff/Principal ladder, and do people actually move up it?
-- **Peer quality** — who they would learn from.
-
-Score against the candidate's **target roles** in PROFILE.md: a role that is lateral for them scores lower
-than one that opens the next level, even at a stronger brand.
-
-### 🛡️ Pillar 5 — Stability & Sustainability (0–10)
-
-Runway and profitability · layoffs in the last 12–24 months · leadership churn · work-life balance and
-on-call load from reviews · attrition signals.
-
-Layoffs within 12 months cap this pillar at **5**. Two rounds in 24 months cap it at **2**.
+- Layoffs within 12 months cap this pillar at **4**. Two rounds in 24 months cap it at **2**.
+- **Explicit intensity language** found in the Role & Seniority Fit Check (e.g. "higher intensity than a
+  traditional 9–5", "high agency", always-on framing) caps it at **3**, independent of layoffs. If it also
+  conflicts with the PROFILE life-stage/capacity constraint, say so in the Rationale as the deciding factor.
 
 ### Bands
 
@@ -321,16 +421,21 @@ Layoffs within 12 months cap this pillar at **5**. Two rounds in 24 months cap i
 |-----|------|---------|
 | 85–100 | 🟢 **Exceptional** | Take it; waiting is likely to cost you |
 | 70–84 | 🟢 **Strong** | Clearly worth pursuing |
-| 55–69 | 🟡 **Solid** | Worth it with successful negotiation on the weak pillar |
-| 40–54 | 🟡 **Marginal** | Only if a specific pillar matters disproportionately to you |
+| 55–69 | 🟡 **Solid** | Worth it; negotiate or probe the weak pillar |
+| 40–54 | 🟡 **Marginal** | Only if a specific pillar matters disproportionately |
 | < 40 | 🔴 **Weak** | Keep looking |
 
-### Weight adjustment
+### Confidence rule
 
-The default weights are 25/20/20/25/10. If PROFILE.md declares priorities, re-weight to match — e.g. a
-candidate who ranks compensation first shifts weight toward pillars 1–3; one optimising for a Principal
-title shifts it toward pillar 4. **Always print the weights actually used**, and note when they differ from
-the default.
+If more than half the pillar inputs are estimated, or **Employee Happiness has no independent data**, cap the
+reported confidence at **Low** and say so in the verdict.
+
+### Weight adjustment and version note
+
+The default v2 weights are 20/20/20/12/15/5/8. If PROFILE.md declares different priorities, re-weight — but
+**always print the weights actually used**. Reports scored under the earlier five-pillar CVI (25/20/20/25/10,
+compensation-led) are **not comparable** to v2 scores: when re-evaluating an old report, re-score every
+pillar rather than converting, and say "re-evaluated under CVI v2" in the künye.
 
 ---
 
@@ -373,13 +478,13 @@ If the user provides multiple companies, run the full report for each, then appe
 | [Name] | X.X / 5 | ✅/⚠️/❌ | ✅/⚠️/❌ | ✅/⚠️/❌ | ✅/⚠️/❌ | 🟢/🟡/🔴 |
 
 ### 🧭 CVI COMPARISON
-| Company | TC | FSR | Comp | Fair Share | Upside | Career Capital | Stability | **CVI** | Confidence |
-|---------|----|-----|------|------------|--------|----------------|-----------|---------|------------|
-| [Name] | €XXX,XXX | X.XX | XX/25 | XX/20 | XX/20 | XX/25 | XX/10 | **XX/100** | High/Med/Low |
+| Company | TC | Domain | Stack | Happiness | Career Capital | Comp+FSR | Equity | Stability | **CVI** | Confidence |
+|---------|----|--------|-------|-----------|----------------|----------|--------|-----------|---------|------------|
+| [Name] | €XXX,XXX | XX/20 | XX/20 | XX/20 | XX/12 | XX/15 | X/5 | X/8 | **XX/100** | High/Med/Low |
 
 Then, in **2–3 sentences**: name the winner, name the single pillar that separates it from the runner-up,
 and state what would have to change for the ranking to flip. Where the top two are within 5 CVI points,
-call it a tie and decide on the pillar the candidate's PROFILE.md ranks highest.
+call it a tie and decide on the pillar the candidate's PROFILE.md ranks highest (under v2: domain, stack, happiness, work value).
 
 ---
 
@@ -425,7 +530,9 @@ Conventions: source `.md` lives under `interviews/<company>/`; generated `.html`
 - Never produce placeholder text in the final output — if data is missing, say so explicitly.
 - Do not add commentary beyond what was found in sources.
 - Do not suggest the candidate "may want to verify" something that you could search for yourself — search it first.
-- Use the salary floor and equity preference from PROFILE.md as the threshold for ✅/⚠️/❌ in Candidate Fit.
+- Use the salary threshold (base) and equity preference from PROFILE.md for ✅/⚠️/❌ in Candidate Fit. Under CVI v2 salary is a **threshold**, not a ranking criterion: an offer at or above the threshold is acceptable and must not be penalised for not being higher.
+- **Every report opens with the künye line:** `**📇 Künye:** First created: YYYY-MM-DD · Last evaluated: YYYY-MM-DD · Method: CVI v2`. On a new report both dates are today. On a re-evaluation **keep the original First created date** (take it from the existing report's date line; if it has none, from the file's creation/first-commit date) and set Last evaluated to today. Never overwrite First created.
+- Employee Happiness must be backed by independent review data. No data → cap the pillar at 10 and cap confidence at Low; never infer happiness from job-post language.
 - Layoffs within the last 12 months: flag as ⚠️ in both QUICK OVERVIEW and CANDIDATE FIT.
 - **Never report base salary as if it were the package** — always produce the Total Compensation breakdown.
 - **Never present a CVI without its pillar table and Assumptions Ledger.** A bare number is not a finding.
@@ -435,3 +542,7 @@ Conventions: source `.md` lives under `interviews/<company>/`; generated `.html`
 - Always answer the "would I take this instead of waiting for another offer?" question with a direct yes or
   no. Refusing to pick a side makes the whole report worthless.
 - Include the **Interview Prep** section whenever the user is actively interviewing, has a call scheduled, or has shared recruiter/interviewer conversation context — not for a pure scan/comparison request.
+- Always run the **Role & Seniority Fit Check** before scoring Candidate Fit — a role can fail on level/intensity/stack-mismatch grounds even when comp and stability look fine. Don't let a good CVI paper over a bad fit on these axes.
+- Quote explicit JD language about hours, pace, or intensity **verbatim** — never soften "higher intensity than a traditional 9–5" into "fast-paced" in the summary. The exact wording is the evidence.
+- Cross-check the JD's stated years-of-experience/level against the candidate's actual experience from PROFILE.md every time — flag both over-qualification (role scoped meaningfully below the candidate) and under-qualification, not just comp/stack fit.
+- When a small, early-stage company (roughly <20–30 employees) combines with explicit intensity language, name that combination directly as a compounding risk rather than scoring each independently.

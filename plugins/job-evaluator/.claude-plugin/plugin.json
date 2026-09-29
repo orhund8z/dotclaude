@@ -1,0 +1,8 @@
+{
+  "name": "job-evaluator",
+  "description": "Evaluates companies, job postings, and offers against your personal career profile with a Career Value Index (CVI) score. Runs a guided setup interview on first use to capture your expectations.",
+  "author": { "name": "Orhun Dalabasmaz" },
+  "repository": "https://github.com/orhund8z/dotclaude",
+  "license": "MIT",
+  "keywords": ["career", "jobs", "evaluation", "salary", "research"]
+}

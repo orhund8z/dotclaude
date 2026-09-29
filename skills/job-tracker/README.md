@@ -140,7 +140,7 @@ Restart Claude Code after installation.
 
 ## Related
 
-- [`job-evaluator`](../job-evaluator/) — deep-dive evaluation of a single company (reviews, salary, layoffs, interview prep). `job-tracker` finds the opening; `job-evaluator` tells you whether to take it.
+- [`job-evaluator`](../../plugins/job-evaluator/skills/job-evaluator/) — deep-dive evaluation of a single company (reviews, salary, layoffs, interview prep). `job-tracker` finds the opening; `job-evaluator` tells you whether to take it.
 
 ## License
 

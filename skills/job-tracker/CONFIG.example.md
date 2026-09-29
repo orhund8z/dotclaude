@@ -10,7 +10,7 @@
 Optional. Point at an existing profile file to sharpen the fit assessment.
 Leave as `none` to rely only on the filters in this file.
 
-- **Profile file:** `~/.claude/skills/job-evaluator/PROFILE.md`
+- **Profile file:** `~/.claude/job-evaluator/PROFILE.md`
 
 ---
 
