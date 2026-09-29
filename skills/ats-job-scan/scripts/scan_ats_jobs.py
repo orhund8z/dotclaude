@@ -61,6 +61,7 @@ LINK_ROOTS: List[str] = []
 PUBLISH_CMD = ""
 PUBLISH_CWD = ""
 UA = "ats-job-scan/1.0 (personal job search)"
+PUSH: Dict[str, str] = {}  # url, header, secret_env, secret — from local.json "push"
 
 CDX_PATTERNS = {
     "ashby": ["jobs.ashbyhq.com/*"],
@@ -895,7 +896,7 @@ def expand(p: Optional[str]) -> str:
 
 def apply_local_settings(args) -> None:
     """local.json (gitignored) holds machine-specific paths; CLI flags win over it."""
-    global CACHE_DIR, OUT_DIR, EXTRA_SLUGS_PATH, COMPANY_DIRS, LINK_ROOTS, PUBLISH_CMD, PUBLISH_CWD, UA
+    global CACHE_DIR, OUT_DIR, EXTRA_SLUGS_PATH, COMPANY_DIRS, LINK_ROOTS, PUBLISH_CMD, PUBLISH_CWD, UA, PUSH
     loc = load_json(args.local or LOCAL_SETTINGS, {})
     if loc.get("cache_dir"):
         CACHE_DIR = expand(loc["cache_dir"])
@@ -906,12 +907,64 @@ def apply_local_settings(args) -> None:
     LINK_ROOTS = [expand(d) for d in loc.get("link_roots", [])]
     PUBLISH_CMD = loc.get("publish_cmd") or ""
     PUBLISH_CWD = expand(loc.get("publish_cwd")) if loc.get("publish_cwd") else ""
+    push = loc.get("push") or {}
+    PUSH = {k: str(v) for k, v in push.items() if v}
+    if args.push_url:
+        PUSH["url"] = args.push_url
     if loc.get("contact"):
         UA = "ats-job-scan/1.0 (personal job search; contact %s)" % loc["contact"]
     if args.output_dir:
         OUT_DIR = expand(args.output_dir)
     if args.cache_dir:
         CACHE_DIR = expand(args.cache_dir)
+
+
+def push_row(m: Match, seen_first: Dict[str, str], baseline: bool, scan_date: str) -> dict:
+    """One job in the webhook contract consumed by the n8n "ATS intake" workflow."""
+    j = m.job
+    jid = "%s:%s:%s" % (j.ats, j.slug.lower(), j.job_id)
+    return {
+        "key": "ats:" + jid, "ats": j.ats, "company": j.company, "title": j.title, "where": m.where,
+        "bucket": "unknown" if m.bucket == "remote-unspecified" else m.bucket, "score": m.score,
+        "pay": m.pay or None, "signals": m.signals, "flags": m.flags, "url": j.url,
+        "published": (j.published or "")[:10] or None,
+        "new": (not baseline) and seen_first.get(jid) == scan_date,
+    }
+
+
+def push_jobs(url: str, header: str, secret: str, meta: dict, jobs: List[dict], batch_size: int = 150) -> Tuple[bool, dict]:
+    """POST the jobs in batches; retry 429/5xx/network errors with backoff, fail fast on other 4xx.
+
+    The secret is only ever sent as a header and is never logged.
+    """
+    batches = [jobs[i:i + batch_size] for i in range(0, len(jobs), batch_size)] or [[]]
+    sent = 0
+    for n, chunk in enumerate(batches, 1):
+        body = json.dumps(dict(meta, batch=n, batches=len(batches), jobs=chunk), ensure_ascii=False).encode("utf-8")
+        for attempt in range(4):
+            req = urllib.request.Request(url, data=body, method="POST", headers={
+                "Content-Type": "application/json", header: secret, "User-Agent": UA})
+            try:
+                with urllib.request.urlopen(req, timeout=90) as r:
+                    r.read()
+                sent += len(chunk)
+                log("[push] batch %d/%d ok (%d jobs, HTTP %s)" % (n, len(batches), len(chunk), r.status))
+                break
+            except urllib.error.HTTPError as e:
+                if e.code == 429 or e.code >= 500:
+                    if attempt < 3:
+                        time.sleep(min(2 ** attempt * 2 + random.random(), 30))
+                        continue
+                hint = {401: "check the header name/secret", 403: "check the header name/secret",
+                        404: "webhook URL wrong or workflow not activated (production URL has /webhook/, not /webhook-test/)",
+                        400: "the workflow rejected the payload"}.get(e.code, "")
+                return False, {"batches": len(batches), "sent_jobs": sent, "error": "HTTP %d on batch %d %s" % (e.code, n, hint)}
+            except (urllib.error.URLError, http.client.HTTPException, TimeoutError, OSError) as e:
+                if attempt < 3:
+                    time.sleep(min(2 ** attempt * 2 + random.random(), 30))
+                    continue
+                return False, {"batches": len(batches), "sent_jobs": sent, "error": "network error on batch %d: %s" % (n, e)}
+    return True, {"batches": len(batches), "sent_jobs": sent, "error": None}
 
 
 def summary_row(m: Match, seen_first: Dict[str, str], baseline: bool, scan_date: str) -> dict:
@@ -944,6 +997,9 @@ def main() -> int:
     ap.add_argument("--min-score", type=int, default=None)
     ap.add_argument("--include-unspecified-remote", action="store_true", help="also list remote jobs whose region is not stated")
     ap.add_argument("--no-publish", action="store_true", help="write the markdown only; skip publish_cmd")
+    ap.add_argument("--push-url", default=None, help="POST all report rows to this webhook (overrides local.json push.url); see README")
+    ap.add_argument("--no-push", action="store_true", help="never POST, even if push.url is configured")
+    ap.add_argument("--push-dry-run", action="store_true", help="build the webhook payload and write push-payload.json to the cache dir, but do not POST")
     args = ap.parse_args()
 
     apply_local_settings(args)
@@ -1011,6 +1067,31 @@ def main() -> int:
         published = rc == 0
         log("[publish] %s" % ("ok: " + " ".join(cmd) if published else "!! exited with %d — markdown is written, publish step failed" % rc))
 
+    push_result = None
+    kept_rows = [m for m in matches if m.score >= cfg.scoring["min_score"]]
+    if PUSH.get("url") and not args.no_push:
+        rows = [push_row(m, seen_first, baseline, scan_date) for m in sorted(kept_rows, key=lambda m: (-m.score, m.job.company.lower()))]
+        meta = {"scan_date": scan_date, "baseline_run": baseline, "partial": partial}
+        if args.push_dry_run:
+            dry = os.path.join(CACHE_DIR, "push-payload.json")
+            with open(dry, "w", encoding="utf-8") as f:
+                json.dump(dict(meta, jobs=rows), f, ensure_ascii=False)
+            push_result = {"dry_run": True, "file": dry, "jobs": len(rows)}
+            log("[push] dry run: %d jobs written to %s" % (len(rows), dry))
+        else:
+            header = PUSH.get("header") or "X-Job-Radar-Key"
+            secret = os.environ.get(PUSH.get("secret_env") or "JOB_RADAR_SECRET") or PUSH.get("secret") or ""
+            if not secret:
+                push_result = {"ok": False, "error": "no secret: set the %s environment variable (or push.secret in local.json)" % (PUSH.get("secret_env") or "JOB_RADAR_SECRET")}
+                log("!! [push] " + push_result["error"])
+            else:
+                ok, info = push_jobs(PUSH["url"], header, secret, meta, rows)
+                push_result = dict(info, ok=ok, jobs=len(rows))
+                if not ok:
+                    log("!! [push] failed: %s" % info["error"])
+        if push_result and push_result.get("ok") is False:
+            rc = rc or 3
+
     mun = [m for m in matches if m.bucket == "munich"]
     rem = [m for m in matches if m.bucket != "munich"]
     ordered = lambda ms: sorted([m for m in ms if m.score >= cfg.scoring["min_score"]], key=lambda m: (-m.score, m.job.company.lower()))
@@ -1026,6 +1107,7 @@ def main() -> int:
             "munich": sum(1 for m in kept if m.bucket == "munich"), "remote": sum(1 for m in kept if m.bucket != "munich"),
             "new": 0 if baseline else sum(1 for m in kept if seen_first.get("%s:%s:%s" % (m.job.ats, m.job.slug.lower(), m.job.job_id)) == scan_date),
         },
+        "push": push_result,
         "top_munich": [summary_row(m, seen_first, baseline, scan_date) for m in ordered(mun)[:10]],
         "top_remote": [summary_row(m, seen_first, baseline, scan_date) for m in ordered(rem)[:10]],
     }

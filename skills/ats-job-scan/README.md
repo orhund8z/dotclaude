@@ -96,6 +96,10 @@ Typical first-run numbers (September 2026): ~10,700 boards, ~214,000 postings se
 - A per-host circuit breaker stops a host after 15 consecutive failures, so one outage cannot stall the run.
 - Boards that returned 404 are skipped for 30 days, empty boards for 7 (`--recheck` ignores that).
 
+## Pushing results to a webhook (n8n)
+
+Set `push.url` in `local.json` (and export the secret named by `push.secret_env`, default `JOB_RADAR_SECRET`) and every run POSTs all report rows to the webhook in batches of 150, with retries on 429/5xx and a fast failure on a rejected secret. `--push-dry-run` writes the payload to the cache dir instead, `--no-push` disables it. Exit code 3 means the report was written but the push failed. The payload contract, a curl test, and the prompt for the matching n8n workflows are in [`n8n/job-radar-followup.md`](./n8n/job-radar-followup.md).
+
 ## Reading the report
 
 | Column | Meaning |
@@ -103,7 +107,7 @@ Typical first-run numbers (September 2026): ~10,700 boards, ~214,000 postings se
 | Score | 0–100 heuristic: title (role + seniority) + skills − penalties ± pay ± freshness |
 | Where | `Munich · Hybrid`, `Remote · Germany`, `Remote · EMEA`, … `on-site/hybrid?` means the posting does not say |
 | Pay | Only when the posting states it (Ashby structured data, or a range parsed from the text); converted with the fixed FX rates in `config.json` |
-| Fit signals | Matched skill groups; `⚠` lists things to check (`level?`, `German required?`, `pay < €125k?`, `open 315d`, off-stack) |
+| Fit signals | Matched skill groups; `⚠` lists things to check (`level?`, `German required?`, `pay < €Nk?`, `open 315d`, off-stack) |
 | 🆕 / 📁 | New posting since the last scan / company already has a folder in `company_dirs` |
 
 The first run is the baseline: no `🆕` markers. From the next run on, `🆕` means the posting was not in the previous candidate set (rule changes alone do not trigger it).

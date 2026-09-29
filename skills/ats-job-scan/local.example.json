@@ -7,5 +7,10 @@
   "company_dirs": [],
   "link_roots": [],
   "extra_slugs_file": null,
-  "contact": ""
+  "contact": "",
+  "push": {
+    "url": null,
+    "header": "X-Job-Radar-Key",
+    "secret_env": "JOB_RADAR_SECRET"
+  }
 }

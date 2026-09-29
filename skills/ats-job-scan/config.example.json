@@ -146,7 +146,7 @@
     }
   ],
   "compensation": {
-    "threshold_eur": 125000,
+    "threshold_eur": 100000,
     "above_points": 8,
     "below_points": -8,
     "fx_to_eur": {

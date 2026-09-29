@@ -35,6 +35,7 @@ Everything runs from one Python script (standard library only, Python 3.9+):
 | User wants newly appeared companies | add `--refresh-slugs` (re-crawls Common Crawl; slug list is otherwise refreshed every 14 days) |
 | Remote jobs that state no region should be included | add `--include-unspecified-remote` |
 | Ignore the dead-board cache | add `--recheck` |
+| Push the cached scan to the n8n webhook | `python3 scripts/scan_ats_jobs.py --rescore` (needs `push.url` in `local.json` and the secret in the `JOB_RADAR_SECRET` env var; `--push-dry-run` to preview). Never ask the user to paste the secret into chat. |
 | Testing a single board | `--slug ashby:nango --seeds-only --max-boards 20 --no-publish` |
 
 **Do not rescan needlessly.** A full scan hits roughly 10,000 boards. If the cache (`~/.cache/ats-job-scan/candidates.json`, or the `cache_dir` in `local.json`) is younger than about 24 h and the user did not ask for fresh data, offer `--rescore` instead of a full scan.
@@ -55,7 +56,7 @@ A full scan takes roughly **25–35 minutes** (Common Crawl discovery ~15 min on
 
 - **Headline:** scan date, boards fetched / errors, postings seen, how many are in the report (top / good), Munich vs remote counts, and how many are 🆕 (say "baseline run — no 🆕 yet" if `baseline_run` is true).
 - **Top Munich** and **top remote** tables (`top_munich`, `top_remote`: score, company, role, where, pay, link). Mark `new: true` rows with 🆕 and `evaluated_before: true` rows with 📁.
-- **Flags worth surfacing:** `pay < €125k?`, `German required?`, `open Nd` (stale posting), `level?`, off-stack penalties.
+- **Flags worth surfacing:** `pay < €Nk?`, `German required?`, `open Nd` (stale posting), `level?`, off-stack penalties.
 - **Where the files are:** the report path, and whether it was published (`published`).
 - **Caveats, always:** companies are discovered, not enumerated (some are invisible); pay is shown only when the posting states it; "Munich · on-site/hybrid?" means the posting does not say; scores are keyword heuristics on the posting text.
 
