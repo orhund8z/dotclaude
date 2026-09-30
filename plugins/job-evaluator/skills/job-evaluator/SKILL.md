@@ -100,8 +100,8 @@ that returns nothing is reported as such, never skipped silently.
    Older submissions also appear on `techpays.com` (Levels.fyi-maintained).
 4. **Levels.fyi (market):** `levels.fyi [job family] salary [city]` at the matching level (Senior/Staff/Principal) → median, p25, p75, p90, sample size.
 5. **Glassdoor:** `[company name] [role] salary [city] Glassdoor` → company and role pay. Distinguish **submitted** salaries from Glassdoor's
-   **modeled "estimated" pay** (an estimate based on 0–few submissions is not evidence — report it but exclude it from the range).
-6. **Payscale:** `[role] salary [city] Payscale` → average, range, sample size, **"last updated" date** (report the date; Payscale pages are often years old).
+   **modeled "estimated" pay** (an estimate based on 0–few submissions is low-quality evidence — include it at tier E weight, convert its currency, and flag it as modeled).
+6. **Payscale:** `[role] salary [city] Payscale` → average, range, sample size, **"last updated" date** (report the date; Payscale pages are often years old, so they get the recency multiplier, not removal).
 7. **Local sources (Germany/DACH):** StepStone Gehaltsreport, gehalt.de, Kununu Gehalt, `[title] Gehalt [city]` → median and range by title.
 8. **Comprehensive.io:** `[company name] site:app.comprehensive.io/benchmarking/postings` → posted salary ranges for the target role.
 9. **The job posting itself:** any stated range or band (EU/DE pay-transparency ranges, US state ranges). Quote it verbatim; it anchors the estimate.
@@ -205,24 +205,38 @@ Answers: *what should this specific role pay, at this company, in this location?
 
 **Target:** [job title as posted → mapped level, e.g. "(Staff) Software Engineer" → Staff / Senior] · [company] · [city, country] · currency and basis (gross annual; base vs TC).
 
-| Source | Scope (company / market · level · location) | Sample size | Data dates | Base | Total comp | Weight |
-|--------|-----------------------------------------------|-------------|------------|------|------------|--------|
-| [Levels.fyi — company](url) | [Company · Staff · Munich] | n=X | 20XX–20XX | €X–€Y | €X–€Y | High / Medium / Low / Excluded |
+| Source | Scope (company / market · level · location) | Sample size | Data dates | Base | Total comp | Tier · weight |
+|--------|-----------------------------------------------|-------------|------------|------|------------|---------------|
+| [Levels.fyi — company](url) | [Company · Staff · Munich] | n=X | 20XX–20XX | €X–€Y | €X–€Y | A · 4.0 / B · 2.0 / … (after multipliers) |
 | [Levels.fyi — market](url) | [All companies · Senior · Munich] | n=X | updated <date> | p25–p75 €X–€Y | … | … |
 | [Glassdoor](url) | … | n=X or "0, modeled" | … | … | … | … |
 | [Payscale](url) | … | n=X | last updated <date> | … | … | … |
 | [StepStone / gehalt.de / Kununu](url) | … | … | … | … | … | … |
 | [Comprehensive.io](url) / [Job posting](url) | … | … | … | … | … | … |
 
-**Weighting rules (apply and state them):**
-1. **Match the level first.** Map the posting's title/level to each source's ladder; never average different levels. If the level is ambiguous (e.g. "(Staff)"), give the range for both adjacent levels.
-2. **Prefer company + location + level specific verified submissions** over market-wide figures, and market-wide over generic title averages.
-3. **Recency:** submissions older than ~3 years are down-weighted and flagged; a source whose "last updated" date is older than ~3 years is shown but **Excluded** from the range (say so).
-4. **Sample size:** n < 5 is Low confidence; n = 1 is an anecdote, shown but not used to set the range.
-5. **Modeled estimates are not evidence** (Glassdoor "estimated pay" with 0 submissions, generic salary calculators): list them, mark **Excluded**, do not blend them in.
-6. **Currency and basis:** convert nothing silently. Keep each source in its own currency and say whether it is base or total; if sources mix bases, compare base to base.
-7. **Employer type:** a US-owned or scale-up employer band is not a proxy for a German incumbent; note when the only market data comes from a different employer profile.
-8. **Posted range wins:** if the posting states a range, report it first and use the other sources to say where in the range this candidate would likely land.
+**Use every source that returns a figure.** Each one goes into the calculation; quality changes its **weight**, never its presence. Only a source that returned no figure at all (blocked, empty, wrong role) is left out, and it is listed as such. Compute the range with this scheme and show the arithmetic:
+
+| Tier | Source type | Base weight |
+|------|-------------|-------------|
+| F | Range stated in the job posting | 5 (anchor) |
+| A | Verified submissions — this company + this location + this level (e.g. Levels.fyi company page) | 4 |
+| B | Verified submissions — same location + level, all companies (e.g. Levels.fyi market page) | 2 |
+| C | Local title averages (StepStone, gehalt.de, Kununu Gehalt) | 1 |
+| D | Survey-based profiles (Payscale and similar) | 1 |
+| E | Modeled / estimated pay (Glassdoor "estimated", calculators) | 0.5 |
+
+**Multipliers** (apply cumulatively, state each): data older than ~3 years or a "last updated" date older than ~3 years ×0.5 · sample size n < 5 ×0.5 (n = 1 ×0.25) · adjacent-level or title-mismatch mapping ×0.5 · currency converted with a stated rate ×1 (see rule 5).
+
+**Formula:** `Mid = Σ(weight × source midpoint) ÷ Σ(weight)`; likewise Low from each source's low end (p25 / range minimum) and High from its high end (p75 / range maximum). A source giving only a point value uses it for Low, Mid and High. Print the weights table with the final numbers so the result can be reproduced.
+
+**Rules (apply and state them):**
+1. **Match the level first.** Map the posting's title/level to each source's ladder; never average different levels. If the level is ambiguous (e.g. "(Staff)"), compute the range for both adjacent levels and report both.
+2. **Prefer company + location + level specific verified submissions** (tier A) over market-wide (B), and market-wide over generic averages (C–E). The weights already encode this; do not override them silently.
+3. **Nothing is hidden.** Stale, tiny, or modeled sources are included at reduced weight and **flagged** in the table (age, n, "modeled"). Outliers stay visible in the source table even when the weight makes them barely move the result.
+4. **Sensitivity line (required):** also report the range using **only tiers A + B** (verified data). If it differs from the all-sources range by more than ~10%, say which sources cause the gap and why (age, level, employer type).
+5. **Currency:** convert every non-local figure to the local currency with a **current, cited exchange rate** (fetch it — e.g. the ECB reference rate via `https://api.frankfurter.dev/v1/latest?base=USD&symbols=EUR`, following redirects — and print the rate and date). If no rate can be retrieved, list the source unconverted and leave it out of the arithmetic, and say so. Keep base and total comp separate; compare base to base.
+6. **Employer type:** a US-owned or scale-up employer band is not a proxy for a German incumbent; note when the only market data comes from a different employer profile.
+7. **Posted range wins:** if the posting states a range, report it first (tier F) and use the other sources to say where in the range this candidate would likely land.
 
 **Expected range `[estimated]`:**
 | | Base | Total comp |
@@ -232,7 +246,7 @@ Answers: *what should this specific role pay, at this company, in this location?
 | High (p75-ish) | €X | €X |
 | Stretch (only if [named condition, e.g. scoped as Senior Staff / strong negotiation]) | €X | €X |
 
-- **Basis:** which sources set which end, with the arithmetic in one or two lines.
+- **Basis:** the weights table and the arithmetic (one line per end), plus the sensitivity line (verified-only A + B range).
 - **Confidence:** High / Medium / Low, and why (sample size, recency, level match, source agreement).
 - **Disagreements:** name sources that conflict and the most likely reason (level, date, base vs TC, employer type). Do not hide outliers.
 - **Versus the candidate's PROFILE floor:** below / within / above the range.
@@ -653,7 +667,7 @@ Conventions: source `.md` lives under `interviews/<company>/`; generated `.html`
 - Employee Happiness must be backed by independent review data. No data → cap the pillar at 10 and cap confidence at Low; never infer happiness from job-post language.
 - Layoffs within the last 12 months: flag as ⚠️ in both QUICK OVERVIEW and CANDIDATE FIT.
 - **Every full report has a Company Research Checklist** with all four groups completed or explicitly marked ⚠️/❌ — never silently dropped. Keep the answers tied to sources; the checklist must not replace the Pros/Cons, Layoff History or Interview Prep sections, only link to them where they overlap. It is omitted in Salary Check Mode.
-- **Every report has an Expected Salary Range** built from at least Levels.fyi, Glassdoor, Payscale and one local/other source, with each source shown (or reported as blocked/empty). Never present a single source as "the market", and never hide a stale, tiny, or modeled source — show it and mark it Excluded.
+- **Every report has an Expected Salary Range** built from every source that returns a figure (Levels.fyi, Glassdoor, Payscale, local sources, the posting), combined with the published weights and shown with the verified-only sensitivity line. Never present a single source as "the market", and never drop a stale, tiny, or modeled source — include it at reduced weight and flag it; blocked or empty sources are listed as such.
 - **Never report base salary as if it were the package** — always produce the Total Compensation breakdown.
 - **Never present a CVI without its pillar table and Assumptions Ledger.** A bare number is not a finding.
 - Every `[estimated]` figure appears in the Assumptions Ledger with its basis and confidence. No exceptions.
