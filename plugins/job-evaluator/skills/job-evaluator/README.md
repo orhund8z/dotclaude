@@ -77,6 +77,8 @@ Each report includes:
 
 - **⚡ Quick Overview** — Glassdoor/Kununu scores, CEO approval, recommendation rate, recent layoffs summary
 - **⚠️ Layoff History** — Events from Layoffs.fyi with dates, size, and reasons (if found)
+- **📋 Company Research Checklist** — Four groups, each item answered with a sourced finding or marked as a gap: company basics (mission/values, news and funding, size and stage, business model), role and team (key requirements, hiring manager if named, team structure, how your experience maps), industry and competition (competitors, trends, press/analyst coverage), and culture signals (Glassdoor interview insights, engineering blog/podcast, shared values)
+- **💶 Expected Salary Range** — Low / Mid / High for *this role, at this company, in this location*, triangulated from Levels.fyi (company and market), Glassdoor, Payscale, local sources (StepStone, gehalt.de, Kununu) and the posting itself. Every source is shown with sample size and data dates; stale, tiny, or modeled sources are listed but excluded, and disagreements are called out
 - **💰 Total Compensation** — Full breakdown (base + bonus + equity/year + quantified benefits), position in the market band, equity instrument and its terms
 - **✅ Pros / ❌ Cons** — Most common employee feedback from Glassdoor/Kununu
 - **🎯 Candidate Fit** — Stack, role availability, location, salary, equity, culture, and stability — assessed against your PROFILE.md
@@ -84,6 +86,8 @@ Each report includes:
 - **🧭 Career Value Index** — 0–100 score with pillar breakdown, Fair Share Ratio, projected career market value in 2–5 years, and an assumptions ledger
 - **🔗 Sources** — Every source searched, with link or explicit "no results found"
 - **🏁 Decision** — 🟢 Apply / 🟡 Research More / 🔴 Skip, plus a direct answer to *"would I take this instead of waiting for another offer?"*
+
+Ask only "what does this role pay?" (e.g. paste a job URL) and it runs a lightweight **salary check** — just the expected range and its evidence.
 
 Multiple companies produce individual reports followed by a side-by-side comparison table and a CVI ranking.
 

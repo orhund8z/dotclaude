@@ -1,6 +1,6 @@
 ---
 name: job-evaluator
-description: Given one or more company names, URLs, or offers, produces a comprehensive job evaluation report tailored to the candidate profile defined in PROFILE.md, including a Career Value Index (CVI v2) that scores business domain and value of the work, tech-stack fit, employee happiness, career capital, compensation vs. threshold (with Fair Share Ratio), equity upside, and stability. Searches Glassdoor, Kununu, Levels.fyi, LinkedIn, Remotely.de, Xing, Indeed.de, Monster.de, Comprehensive.io, Layoffs.fyi, Hiring.cafe, Builtin.com, and Wellfound.com. Use this skill when the user provides company names, URLs, or offers, researches job listings, or uses phrases like "evaluate this company", "should I apply here", "compare these offers", "which offer should I take", "what's the salary", "is this a fair offer", "what are the employee reviews", "compare these companies". Also use it for "setup job-evaluator" / "update my profile": if no candidate PROFILE.md exists yet, it first runs a guided setup interview to capture the user's expectations.
+description: Given one or more company names, URLs, or offers, produces a comprehensive job evaluation report tailored to the candidate profile defined in PROFILE.md, including an Expected Salary Range triangulated from Levels.fyi, Glassdoor, Payscale and local sources, and a Career Value Index (CVI v2) that scores business domain and value of the work, tech-stack fit, employee happiness, career capital, compensation vs. threshold (with Fair Share Ratio), equity upside, and stability. Searches Glassdoor, Kununu, Levels.fyi, LinkedIn, Remotely.de, Xing, Indeed.de, Monster.de, Comprehensive.io, Layoffs.fyi, Hiring.cafe, Builtin.com, and Wellfound.com. Use this skill when the user provides company names, URLs, or offers, researches job listings, or uses phrases like "evaluate this company", "should I apply here", "compare these offers", "which offer should I take", "what's the salary", "is this a fair offer", "what are the employee reviews", "compare these companies". Also use it for "setup job-evaluator" / "update my profile": if no candidate PROFILE.md exists yet, it first runs a guided setup interview to capture the user's expectations.
 ---
 
 # Job Evaluator Skill
@@ -43,7 +43,7 @@ This skill operates in **strict zero-hallucination mode**:
 
 ### The one carve-out: modeled estimates
 
-The **Career Value Index** section (and only that section) is allowed to reason beyond the raw search
+The **Career Value Index** section and the **Expected Salary Range** synthesis (and only those) are allowed to reason beyond the raw search
 results — a score is by definition a model, and refusing to estimate would make it useless. Inside that
 section:
 
@@ -51,6 +51,8 @@ section:
   **Assumptions Ledger** with its basis and a confidence level (High / Medium / Low).
 - An estimate must be derived from something found (headcount, funding, revenue, market bands, stage), not
   from a general impression of the company.
+- The Expected Salary Range is computed from the retrieved data points only, with the arithmetic and the weighting rationale shown. Every raw
+  figure in its source table is factual and cited; only the final Low / Mid / High is `[estimated]`.
 - The factual sections above (ratings, salaries reported, open positions, layoffs) stay strict: no estimates
   leak into them.
 - If more than half the CVI inputs are estimated, cap the reported confidence at **Low** and say so in the
@@ -74,36 +76,65 @@ numbers exist and are lower than the company average, report both.
 **Domain & product (feeds the Domain & Work Value pillar).** Search what the company does, who its customers are,
 its market position and whether the domain is growing or fragile: `[company] product customers business model`.
 
+### Company & Role (feeds the Company Research Checklist)
+Answer each checklist item from a source, not from memory. Parallelize.
+
+- **About / mission / values:** the company's own About, Careers and Values pages (`[company] about mission values`) — quote their wording.
+- **Recent news & funding:** `[company] news [current year]`, newsroom/press page, funding or earnings announcements, product launches (last ~12 months, dated).
+- **Size, stage, key markets, business model:** annual report / investor page / Crunchbase / LinkedIn headcount → employees, revenue or ARR band, funding stage or listing, main markets, and **how the company makes money** (revenue lines).
+- **Competitors & differentiation:** `[company] competitors alternatives` + the company's own positioning → 3–5 named competitors and what actually differentiates the company.
+- **Industry trends & press/analyst coverage:** `[industry] trends challenges [current year]`, analyst or trade-press coverage of the company (dated, with outlet).
+- **Culture signals:** engineering blog, tech talks, podcast, social media, open-source repos (`[company] engineering blog`), and Glassdoor **interview-process** reviews (`[company] Glassdoor interview questions [role]`).
+- **Hiring manager / team:** only if the posting or the user names them. Use public professional information only (role, tenure, public writing/talks). If not named, write "not identified" — never guess a name.
+- **Job description analysis:** re-read the posting fully; extract the top requirements, stated disqualifiers, level/intensity language, and team/reporting context.
+
 ### Compensation
-3. **Levels.fyi:** `[company name] levels.fyi engineer salary Germany` → salary by level, location
-4. **Comprehensive.io:** `[company name] site:app.comprehensive.io/benchmarking/postings` → market salary ranges for target roles
-5. **Benefits/Equity:** `[company name] employee benefits Germany equity RSU bonus` → equity structure, bonus, perks
+Goal: an **expected salary range for this role, at this company, in this location** — triangulated from several
+independent sources (see **Salary Range Triangulation** in the report format). Search all of these; a source
+that returns nothing is reported as such, never skipped silently.
+
+3. **Levels.fyi (company + location):** `[company name] levels.fyi [job family] salary [country/city]` → verified submissions by level.
+   Open the **country- or city-scoped** company page (`levels.fyi/companies/<company>/salaries/<job-family>/locations/<country>`); the unscoped
+   page can default to another country and currency (e.g. a Munich-based company showing India/INR). Record per level: base, stock, bonus, TC,
+   number of submissions, and submission dates. If the page is JS-rendered, read the data embedded in the page rather than skipping it.
+   Older submissions also appear on `techpays.com` (Levels.fyi-maintained).
+4. **Levels.fyi (market):** `levels.fyi [job family] salary [city]` at the matching level (Senior/Staff/Principal) → median, p25, p75, p90, sample size.
+5. **Glassdoor:** `[company name] [role] salary [city] Glassdoor` → company and role pay. Distinguish **submitted** salaries from Glassdoor's
+   **modeled "estimated" pay** (an estimate based on 0–few submissions is not evidence — report it but exclude it from the range).
+6. **Payscale:** `[role] salary [city] Payscale` → average, range, sample size, **"last updated" date** (report the date; Payscale pages are often years old).
+7. **Local sources (Germany/DACH):** StepStone Gehaltsreport, gehalt.de, Kununu Gehalt, `[title] Gehalt [city]` → median and range by title.
+8. **Comprehensive.io:** `[company name] site:app.comprehensive.io/benchmarking/postings` → posted salary ranges for the target role.
+9. **The job posting itself:** any stated range or band (EU/DE pay-transparency ranges, US state ranges). Quote it verbatim; it anchors the estimate.
+10. **Benefits/Equity:** `[company name] employee benefits [country] equity RSU bonus` → equity structure, bonus, perks
+
+If a source blocks automated access (e.g. Glassdoor or Kununu returning a bot-check/403), write **"source blocked — not retrieved"** and use only what
+a search result snippet actually shows, labelled as a snippet.
 
 ### Job Openings
 Search all sources below. Consolidate all matching positions into one table. Only include roles that match the candidate's target roles from PROFILE.md.
 
-6. **LinkedIn:** `[company name] [target roles] jobs [candidate location preferences]`
-7. **Greenhouse:** `[company name] site:job-boards.greenhouse.io` or `[company name] site:job-boards.eu.greenhouse.io` → direct ATS listings with apply links
-8. **Xing:** `[company name] Xing Stellenangebote [target roles]`
-9. **Indeed.de:** `[company name] indeed.de [target roles]`
-10. **Monster.de:** `[company name] monster.de engineer jobs`
-11. **Remotely.de:** `[company name] remotely.de engineer`
-12. **Hiring.cafe:** `[company name] site:hiring.cafe` or `[company name] hiring.cafe [target role] remote`
-13. **Builtin.com:** `[company name] site:builtin.com [target role]`
-14. **Wellfound.com:** `[company name] site:wellfound.com [target role]`
-15. **Careers page:** `[company name] careers jobs [target roles]`
+11. **LinkedIn:** `[company name] [target roles] jobs [candidate location preferences]`
+12. **Greenhouse:** `[company name] site:job-boards.greenhouse.io` or `[company name] site:job-boards.eu.greenhouse.io` → direct ATS listings with apply links
+13. **Xing:** `[company name] Xing Stellenangebote [target roles]`
+14. **Indeed.de:** `[company name] indeed.de [target roles]`
+15. **Monster.de:** `[company name] monster.de engineer jobs`
+16. **Remotely.de:** `[company name] remotely.de engineer`
+17. **Hiring.cafe:** `[company name] site:hiring.cafe` or `[company name] hiring.cafe [target role] remote`
+18. **Builtin.com:** `[company name] site:builtin.com [target role]`
+19. **Wellfound.com:** `[company name] site:wellfound.com [target role]`
+20. **Careers page:** `[company name] careers jobs [target roles]`
 
 ### Stability
-16. **Layoffs.fyi:** `[company name] layoffs.fyi` → layoff events, dates, headcount reductions
+21. **Layoffs.fyi:** `[company name] layoffs.fyi` → layoff events, dates, headcount reductions
 
 ### Company Capacity (inputs for the Fair Share Ratio)
 These searches establish **what the company could afford to pay**, which is what makes the CVI more than a salary comparison.
 
-17. **Funding & valuation:** `[company name] funding round valuation crunchbase` → total raised, last round size + date, post-money valuation, lead investors
-18. **Revenue & profitability:** `[company name] revenue ARR profitable annual report` → revenue, ARR, margin, profitability status
-19. **Headcount:** `[company name] number of employees linkedin headcount` → current headcount and growth/shrink trend
-20. **Equity instrument:** `[company name] RSU stock options ESOP VSOP vesting cliff employees` → what employees actually receive, vesting schedule, exercise terms
-21. **Exit signals:** `[company name] IPO acquisition rumors S-1 secondary sale` → IPO/M&A trajectory, secondary market liquidity
+22. **Funding & valuation:** `[company name] funding round valuation crunchbase` → total raised, last round size + date, post-money valuation, lead investors
+23. **Revenue & profitability:** `[company name] revenue ARR profitable annual report` → revenue, ARR, margin, profitability status
+24. **Headcount:** `[company name] number of employees linkedin headcount` → current headcount and growth/shrink trend
+25. **Equity instrument:** `[company name] RSU stock options ESOP VSOP vesting cliff employees` → what employees actually receive, vesting schedule, exercise terms
+26. **Exit signals:** `[company name] IPO acquisition rumors S-1 secondary sale` → IPO/M&A trajectory, secondary market liquidity
 
 ---
 
@@ -134,6 +165,79 @@ Summarize layoff events found on Layoffs.fyi or in news results:
 
 If no layoffs found: `No layoffs recorded on Layoffs.fyi or in recent news.`
 
+#### 📋 COMPANY RESEARCH CHECKLIST
+Complete every item with a finding and a source, or mark it. Status: ✅ found · ⚠️ partial / dated / single source · ❌ not found. Keep each answer to 1–2 lines; this section is a fast briefing, not an essay.
+
+**1. Company basics**
+| Item | Status | Finding | Source |
+|------|--------|---------|--------|
+| Mission, vision, values — articulated in 2–3 lines using the company's own words | ✅/⚠️/❌ | [quote/paraphrase + what it means in practice] | [url] |
+| Recent news, funding rounds, product launches (last ~12 months) | ✅/⚠️/❌ | [dated bullets] | [url] |
+| Size, stage, key markets | ✅/⚠️/❌ | [headcount, funding/listing stage, main markets] | [url] |
+| Business model — how they make money | ✅/⚠️/❌ | [revenue lines, customers, pricing model] | [url] |
+
+**2. Role & team**
+| Item | Status | Finding | Source |
+|------|--------|---------|--------|
+| Key requirements from the job description (top 5, plus stated disqualifiers) | ✅/⚠️/❌ | [verbatim-close list] | [posting](url) |
+| Hiring manager | ✅/⚠️/❌ | [name + public role/background, or "not identified in the posting"] | [url] |
+| Team structure and where this role fits | ✅/⚠️/❌ | [teams named, reporting line, scope, what the role owns] | [posting](url) |
+| Top 2–3 ways the candidate's experience maps to their top needs | ✅/⚠️/❌ | [requirement → specific PROFILE.md experience/project] | PROFILE.md + posting |
+
+**3. Industry & competition**
+| Item | Status | Finding | Source |
+|------|--------|---------|--------|
+| Main competitors and what differentiates the company | ✅/⚠️/❌ | [3–5 named competitors; differentiator] | [url] |
+| Current industry trends and challenges | ✅/⚠️/❌ | [2–3 dated points that affect this company] | [url] |
+| Recent press coverage or analyst reports | ✅/⚠️/❌ | [outlet, date, headline/claim] | [url] |
+
+**4. Culture signals**
+| Item | Status | Finding | Source |
+|------|--------|---------|--------|
+| Glassdoor interview-process insights (stages, format, difficulty, typical questions) | ✅/⚠️/❌ | [what reviewers report] | [Glassdoor](url) |
+| Engineering blog, social media, podcast, talks, open source | ✅/⚠️/❌ | [what they publish, cadence, notable themes] | [url] |
+| Shared values between the candidate and the company | ✅/⚠️/❌ | [2–3 overlaps and any clash, judged against PROFILE.md priorities] | PROFILE.md + [url] |
+
+**Reading the checklist:** end with one line — *Ready to interview / Gaps to close first* — naming the ❌ items that matter most. The mapping and shared-values rows are the only judgement calls; base them on named evidence from both the posting and PROFILE.md, and say so when the evidence is thin.
+
+#### 💶 EXPECTED SALARY RANGE
+Answers: *what should this specific role pay, at this company, in this location?* Show the inputs before the conclusion.
+
+**Target:** [job title as posted → mapped level, e.g. "(Staff) Software Engineer" → Staff / Senior] · [company] · [city, country] · currency and basis (gross annual; base vs TC).
+
+| Source | Scope (company / market · level · location) | Sample size | Data dates | Base | Total comp | Weight |
+|--------|-----------------------------------------------|-------------|------------|------|------------|--------|
+| [Levels.fyi — company](url) | [Company · Staff · Munich] | n=X | 20XX–20XX | €X–€Y | €X–€Y | High / Medium / Low / Excluded |
+| [Levels.fyi — market](url) | [All companies · Senior · Munich] | n=X | updated <date> | p25–p75 €X–€Y | … | … |
+| [Glassdoor](url) | … | n=X or "0, modeled" | … | … | … | … |
+| [Payscale](url) | … | n=X | last updated <date> | … | … | … |
+| [StepStone / gehalt.de / Kununu](url) | … | … | … | … | … | … |
+| [Comprehensive.io](url) / [Job posting](url) | … | … | … | … | … | … |
+
+**Weighting rules (apply and state them):**
+1. **Match the level first.** Map the posting's title/level to each source's ladder; never average different levels. If the level is ambiguous (e.g. "(Staff)"), give the range for both adjacent levels.
+2. **Prefer company + location + level specific verified submissions** over market-wide figures, and market-wide over generic title averages.
+3. **Recency:** submissions older than ~3 years are down-weighted and flagged; a source whose "last updated" date is older than ~3 years is shown but **Excluded** from the range (say so).
+4. **Sample size:** n < 5 is Low confidence; n = 1 is an anecdote, shown but not used to set the range.
+5. **Modeled estimates are not evidence** (Glassdoor "estimated pay" with 0 submissions, generic salary calculators): list them, mark **Excluded**, do not blend them in.
+6. **Currency and basis:** convert nothing silently. Keep each source in its own currency and say whether it is base or total; if sources mix bases, compare base to base.
+7. **Employer type:** a US-owned or scale-up employer band is not a proxy for a German incumbent; note when the only market data comes from a different employer profile.
+8. **Posted range wins:** if the posting states a range, report it first and use the other sources to say where in the range this candidate would likely land.
+
+**Expected range `[estimated]`:**
+| | Base | Total comp |
+|---|------|-----------|
+| Low (p25-ish) | €X | €X |
+| **Mid (expected)** | **€X** | **€X** |
+| High (p75-ish) | €X | €X |
+| Stretch (only if [named condition, e.g. scoped as Senior Staff / strong negotiation]) | €X | €X |
+
+- **Basis:** which sources set which end, with the arithmetic in one or two lines.
+- **Confidence:** High / Medium / Low, and why (sample size, recency, level match, source agreement).
+- **Disagreements:** name sources that conflict and the most likely reason (level, date, base vs TC, employer type). Do not hide outliers.
+- **Versus the candidate's PROFILE floor:** below / within / above the range.
+- **What is missing:** blocked or empty sources and what would tighten the range (e.g. a recruiter conversation, a posted band).
+
 #### 💰 TOTAL COMPENSATION
 Never report base salary alone. Break the package into its components and total them.
 
@@ -145,7 +249,7 @@ Never report base salary alone. Break the package into its components and total 
 | Benefits (quantified) | €X,XXX | pension match, meal/transport, learning budget, extra leave |
 | **Total Compensation** | **€XXX,XXX** | |
 
-- **Market Range (target roles, this location/level):** €XXX,XXX – €XXX,XXX TC — [source](url)
+- **Market Range (target roles, this location/level):** the Expected Salary Range above (Low – High TC) — sources listed there
 - **Position in band:** below p25 / p25 / p50 / p75 / p90+ — [source](url)
 - **Equity instrument:** RSU (public) / RSU (private) / ISO / NSO / ESOP / **VSOP or phantom shares** — with vesting schedule, cliff, and exercise window.
   > Flag explicitly when the instrument is a German **VSOP / virtual share**: it pays only on exit and is taxed as ordinary income, so it is worth materially less than an equivalent RSU grant. Do not silently treat it as equity.
@@ -224,6 +328,9 @@ List every source searched and whether it returned relevant data:
 - 🔍 Kununu: [link or "no results"]
 - 💰 Levels.fyi: [link or "no results"]
 - 💰 Comprehensive.io: [link or "no results"]
+- 💰 Glassdoor salaries: [link, "modeled estimate only", "source blocked", or "no results"]
+- 💰 Payscale: [link + last-updated date, or "no results"]
+- 💰 StepStone / gehalt.de / Kununu Gehalt: [link or "no results"]
 - 📉 Layoffs.fyi: [link or "no results"]
 - 💼 LinkedIn Jobs: [link or "no results"]
 - 💼 Xing Jobs: [link or "no results"]
@@ -373,7 +480,7 @@ Compensation is a **threshold**, not a race. Two sub-scores:
 | Clearly below the floor | 0–3 |
 
 Hard gate: base below the PROFILE floor caps 5a at **5** and is flagged in the verdict. Comp disclosed as
-"data not available" is scored on the market band for the role, flagged, and reduces confidence.
+"data not available" is scored on the **Expected Salary Range** mid-point (Total comp) for the role, flagged, and reduces confidence.
 
 **5b. Fair Share Ratio (0–5).** FSR = (offered TC) ÷ (TC this company's capacity and stage would support for
 this level). Estimate the denominator from company capacity: revenue/employee and margin for profitable
@@ -467,6 +574,15 @@ List the candidate's real gaps against this specific role (tech stack, language/
 
 ---
 
+## Salary Check Mode
+
+If the user only asks what a role pays ("what's the salary for this role", "expected range for <posting URL>"), do **not** produce the full report. Read the posting (title, level, location, any stated range), run the Compensation research steps, and return only:
+Target line → source table → **Expected range `[estimated]`** → confidence, disagreements, versus-PROFILE-floor, missing data, and a Sources list. Offer the full evaluation afterwards.
+
+If the URL's site region differs from the job's actual location (e.g. a `/us/` career-site path for a job located in Germany), use the **job's stated location**, and say so.
+
+---
+
 ## Multiple Companies
 
 If the user provides multiple companies, run the full report for each, then append both tables below,
@@ -536,6 +652,8 @@ Conventions: source `.md` lives under `interviews/<company>/`; generated `.html`
 - **Every report opens with the report-info line:** `**📇 Report info:** First created: YYYY-MM-DD · Last evaluated: YYYY-MM-DD · Method: CVI v2`. On a new report both dates are today. On a re-evaluation **keep the original First created date** (take it from the existing report's report-info line — an older `**📇 Künye:**` line means the same thing and is read the same way — or its date line; if it has none, from the file's creation/first-commit date) and set Last evaluated to today. Never overwrite First created.
 - Employee Happiness must be backed by independent review data. No data → cap the pillar at 10 and cap confidence at Low; never infer happiness from job-post language.
 - Layoffs within the last 12 months: flag as ⚠️ in both QUICK OVERVIEW and CANDIDATE FIT.
+- **Every full report has a Company Research Checklist** with all four groups completed or explicitly marked ⚠️/❌ — never silently dropped. Keep the answers tied to sources; the checklist must not replace the Pros/Cons, Layoff History or Interview Prep sections, only link to them where they overlap. It is omitted in Salary Check Mode.
+- **Every report has an Expected Salary Range** built from at least Levels.fyi, Glassdoor, Payscale and one local/other source, with each source shown (or reported as blocked/empty). Never present a single source as "the market", and never hide a stale, tiny, or modeled source — show it and mark it Excluded.
 - **Never report base salary as if it were the package** — always produce the Total Compensation breakdown.
 - **Never present a CVI without its pillar table and Assumptions Ledger.** A bare number is not a finding.
 - Every `[estimated]` figure appears in the Assumptions Ledger with its basis and confidence. No exceptions.
