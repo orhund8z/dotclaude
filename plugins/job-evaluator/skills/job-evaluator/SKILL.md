@@ -93,19 +93,38 @@ Goal: an **expected salary range for this role, at this company, in this locatio
 independent sources (see **Salary Range Triangulation** in the report format). Search all of these; a source
 that returns nothing is reported as such, never skipped silently.
 
-3. **Levels.fyi (company + location):** `[company name] levels.fyi [job family] salary [country/city]` → verified submissions by level.
+3. **Levels.fyi (company + location) — MANDATORY, never skipped.** `[company name] levels.fyi [job family] salary [country/city]` → verified submissions **per level**.
    Open the **country- or city-scoped** company page (`levels.fyi/companies/<company>/salaries/<job-family>/locations/<country>`); the unscoped
-   page can default to another country and currency (e.g. a Munich-based company showing India/INR). Record per level: base, stock, bonus, TC,
-   number of submissions, and submission dates. If the page is JS-rendered, read the data embedded in the page rather than skipping it.
-   Older submissions also appear on `techpays.com` (Levels.fyi-maintained).
-4. **Levels.fyi (market):** `levels.fyi [job family] salary [city]` at the matching level (Senior/Staff/Principal) → median, p25, p75, p90, sample size.
+   page can default to another country and currency (e.g. a Munich-based company showing India/INR).
+   **Pull every level the company has data for, not only the matching one** — the company's own ladder (e.g. L4/L5/L6, E5/E6, IC3/IC4/IC5), with
+   **base, stock/yr, bonus, TC, number of submissions, and submission dates for each row**. Also record the company's level → market-level mapping
+   (Levels.fyi's Senior / Staff / Principal equivalence) so the candidate can see where their target level sits.
+   Retrieval order (stop at the first that yields the per-level table; do not give up after a failed `WebFetch`):
+   1. `WebFetch` / search result for the scoped page.
+   2. If the page is JS-rendered or returns no table, read the data **embedded in the page** (`__NEXT_DATA__` JSON / inline script payload) or the
+      page's XHR/JSON responses.
+   3. Drive the page with the Chrome tools (`claude-in-chrome`: navigate, `get_page_text`, `javascript_tool`, `read_network_requests`) and read the rendered level table.
+   4. `techpays.com` (Levels.fyi-maintained, older submissions) as a supplement.
+   Only if all four fail write **"Levels.fyi — source blocked / no data for this company"** and list the paths tried. If the company has no page or no entry
+   for this job family/location, say so and rely on step 4 for the market-level view; never silently omit Levels.fyi.
+4. **Levels.fyi (market) — MANDATORY.** `levels.fyi/t/software-engineer/locations/<city>` (and the job-family equivalent, e.g. SRE / engineering manager) → **per level**
+   (Entry / Mid / Senior / Staff / Senior Staff / Principal as the page lists them): median TC, p25, p75, p90, base, stock, sample size. Pull **at least the
+   target level and both neighbouring levels** so the table shows where the target sits on the ladder.
 5. **Glassdoor:** `[company name] [role] salary [city] Glassdoor` → company and role pay. Distinguish **submitted** salaries from Glassdoor's
    **modeled "estimated" pay** (an estimate based on 0–few submissions is low-quality evidence — include it at tier E weight, convert its currency, and flag it as modeled).
 6. **Payscale:** `[role] salary [city] Payscale` → average, range, sample size, **"last updated" date** (report the date; Payscale pages are often years old, so they get the recency multiplier, not removal).
 7. **Local sources (Germany/DACH):** StepStone Gehaltsreport, gehalt.de, Kununu Gehalt, `[title] Gehalt [city]` → median and range by title.
 8. **Comprehensive.io:** `[company name] site:app.comprehensive.io/benchmarking/postings` → posted salary ranges for the target role.
-9. **The job posting itself:** any stated range or band (EU/DE pay-transparency ranges, US state ranges). Quote it verbatim; it anchors the estimate.
-10. **Benefits/Equity:** `[company name] employee benefits [country] equity RSU bonus` → equity structure, bonus, perks
+9. **Trust in SODA salary guide (Germany roles only):** `https://www.trustinsoda.com/salary-guides/software-engineering-germany` → recruiter-compiled
+   permanent-salary bands by **stack track** (.NET, Java, Python, Go, Ruby, JavaScript/TypeScript, Frontend, Full Stack, C++/Systems, Rust) and **level**
+   (Developer/Engineer, Senior, Lead, Staff, Senior Staff, Principal, Engineering Manager). Pick the table matching the posting's primary stack (if the posting
+   lists several languages, record each matching track) and the row matching the title/level. Record the € band, the track, and the page's "Last updated" date.
+   Sibling guides cover other families (`data-germany`, `cyber-security-germany`, …); there is no Germany DevOps/SRE/platform guide, so use the closest
+   Software Engineering track for those roles and flag the mismatch. Known limits: figures come from the firm's own hiring mandates and candidate database
+   (skewed toward employers that use recruiters, and toward offers rather than salaries actually paid), are **Germany-wide, not city- or company-specific**,
+   disclose no sample size, and do not state base vs total (treat as base and say so). Skip this step for roles outside Germany.
+10. **The job posting itself:** any stated range or band (EU/DE pay-transparency ranges, US state ranges). Quote it verbatim; it anchors the estimate.
+11. **Benefits/Equity:** `[company name] employee benefits [country] equity RSU bonus` → equity structure, bonus, perks
 
 If a source blocks automated access (e.g. Glassdoor or Kununu returning a bot-check/403), write **"source blocked — not retrieved"** and use only what
 a search result snippet actually shows, labelled as a snippet.
@@ -113,28 +132,28 @@ a search result snippet actually shows, labelled as a snippet.
 ### Job Openings
 Search all sources below. Consolidate all matching positions into one table. Only include roles that match the candidate's target roles from PROFILE.md.
 
-11. **LinkedIn:** `[company name] [target roles] jobs [candidate location preferences]`
-12. **Greenhouse:** `[company name] site:job-boards.greenhouse.io` or `[company name] site:job-boards.eu.greenhouse.io` → direct ATS listings with apply links
-13. **Xing:** `[company name] Xing Stellenangebote [target roles]`
-14. **Indeed.de:** `[company name] indeed.de [target roles]`
-15. **Monster.de:** `[company name] monster.de engineer jobs`
-16. **Remotely.de:** `[company name] remotely.de engineer`
-17. **Hiring.cafe:** `[company name] site:hiring.cafe` or `[company name] hiring.cafe [target role] remote`
-18. **Builtin.com:** `[company name] site:builtin.com [target role]`
-19. **Wellfound.com:** `[company name] site:wellfound.com [target role]`
-20. **Careers page:** `[company name] careers jobs [target roles]`
+12. **LinkedIn:** `[company name] [target roles] jobs [candidate location preferences]`
+13. **Greenhouse:** `[company name] site:job-boards.greenhouse.io` or `[company name] site:job-boards.eu.greenhouse.io` → direct ATS listings with apply links
+14. **Xing:** `[company name] Xing Stellenangebote [target roles]`
+15. **Indeed.de:** `[company name] indeed.de [target roles]`
+16. **Monster.de:** `[company name] monster.de engineer jobs`
+17. **Remotely.de:** `[company name] remotely.de engineer`
+18. **Hiring.cafe:** `[company name] site:hiring.cafe` or `[company name] hiring.cafe [target role] remote`
+19. **Builtin.com:** `[company name] site:builtin.com [target role]`
+20. **Wellfound.com:** `[company name] site:wellfound.com [target role]`
+21. **Careers page:** `[company name] careers jobs [target roles]`
 
 ### Stability
-21. **Layoffs.fyi:** `[company name] layoffs.fyi` → layoff events, dates, headcount reductions
+22. **Layoffs.fyi:** `[company name] layoffs.fyi` → layoff events, dates, headcount reductions
 
 ### Company Capacity (inputs for the Fair Share Ratio)
 These searches establish **what the company could afford to pay**, which is what makes the CVI more than a salary comparison.
 
-22. **Funding & valuation:** `[company name] funding round valuation crunchbase` → total raised, last round size + date, post-money valuation, lead investors
-23. **Revenue & profitability:** `[company name] revenue ARR profitable annual report` → revenue, ARR, margin, profitability status
-24. **Headcount:** `[company name] number of employees linkedin headcount` → current headcount and growth/shrink trend
-25. **Equity instrument:** `[company name] RSU stock options ESOP VSOP vesting cliff employees` → what employees actually receive, vesting schedule, exercise terms
-26. **Exit signals:** `[company name] IPO acquisition rumors S-1 secondary sale` → IPO/M&A trajectory, secondary market liquidity
+23. **Funding & valuation:** `[company name] funding round valuation crunchbase` → total raised, last round size + date, post-money valuation, lead investors
+24. **Revenue & profitability:** `[company name] revenue ARR profitable annual report` → revenue, ARR, margin, profitability status
+25. **Headcount:** `[company name] number of employees linkedin headcount` → current headcount and growth/shrink trend
+26. **Equity instrument:** `[company name] RSU stock options ESOP VSOP vesting cliff employees` → what employees actually receive, vesting schedule, exercise terms
+27. **Exit signals:** `[company name] IPO acquisition rumors S-1 secondary sale` → IPO/M&A trajectory, secondary market liquidity
 
 ---
 
@@ -205,6 +224,18 @@ Answers: *what should this specific role pay, at this company, in this location?
 
 **Target:** [job title as posted → mapped level, e.g. "(Staff) Software Engineer" → Staff / Senior] · [company] · [city, country] · currency and basis (gross annual; base vs TC).
 
+**Levels.fyi by level (required, shown first).** One row per level — the full ladder the page returns, not just the matching level. Mark the row(s) the posting maps to with 🎯. Same for the market table.
+
+| Scope | Level (company ladder → market level) | Base | Stock/yr | Bonus | Total comp | n | Data dates |
+|-------|----------------------------------------|------|----------|-------|------------|---|------------|
+| [Company · <country/city>](url) | L4 → Mid | €X | €X | €X | €X | n | 20XX–20XX |
+| [Company · <country/city>](url) | 🎯 L5 → Senior | … | … | … | … | … | … |
+| [Company · <country/city>](url) | L6 → Staff | … | … | … | … | … | … |
+| [Market · <city>](url) | Senior | median / p25–p75 / p90 | … | … | … | n | updated <date> |
+| [Market · <city>](url) | 🎯 Staff | … | … | … | … | … | … |
+
+If a level has no submissions write "no data" in its row rather than dropping it. Report the converted currency and the exchange rate used (see rule 5).
+
 | Source | Scope (company / market · level · location) | Sample size | Data dates | Base | Total comp | Tier · weight |
 |--------|-----------------------------------------------|-------------|------------|------|------------|---------------|
 | [Levels.fyi — company](url) | [Company · Staff · Munich] | n=X | 20XX–20XX | €X–€Y | €X–€Y | A · 4.0 / B · 2.0 / … (after multipliers) |
@@ -212,6 +243,7 @@ Answers: *what should this specific role pay, at this company, in this location?
 | [Glassdoor](url) | … | n=X or "0, modeled" | … | … | … | … |
 | [Payscale](url) | … | n=X | last updated <date> | … | … | … |
 | [StepStone / gehalt.de / Kununu](url) | … | … | … | … | … | … |
+| [Trust in SODA guide](url) | [Germany-wide · <stack> track · <level>] | n undisclosed | updated <month year> | €X–€Y | n/a | C · 1.0 |
 | [Comprehensive.io](url) / [Job posting](url) | … | … | … | … | … | … |
 
 **Use every source that returns a figure.** Each one goes into the calculation; quality changes its **weight**, never its presence. Only a source that returned no figure at all (blocked, empty, wrong role) is left out, and it is listed as such. Compute the range with this scheme and show the arithmetic:
@@ -221,11 +253,13 @@ Answers: *what should this specific role pay, at this company, in this location?
 | F | Range stated in the job posting | 5 (anchor) |
 | A | Verified submissions — this company + this location + this level (e.g. Levels.fyi company page) | 4 |
 | B | Verified submissions — same location + level, all companies (e.g. Levels.fyi market page) | 2 |
-| C | Local title averages (StepStone, gehalt.de, Kununu Gehalt) | 1 |
+| C | Local / market guides — StepStone, gehalt.de, Kununu Gehalt, and the Trust in SODA recruiter guide | 1 |
 | D | Survey-based profiles (Payscale and similar) | 1 |
 | E | Modeled / estimated pay (Glassdoor "estimated", calculators) | 0.5 |
 
 **Multipliers** (apply cumulatively, state each): data older than ~3 years or a "last updated" date older than ~3 years ×0.5 · sample size n < 5 ×0.5 (n = 1 ×0.25) · adjacent-level or title-mismatch mapping ×0.5 · currency converted with a stated rate ×1 (see rule 5).
+
+**Sample size not disclosed** (StepStone, Trust in SODA): no n-multiplier, but flag it in the table as "n undisclosed".
 
 **Formula:** `Mid = Σ(weight × source midpoint) ÷ Σ(weight)`; likewise Low from each source's low end (p25 / range minimum) and High from its high end (p75 / range maximum). A source giving only a point value uses it for Low, Mid and High. Print the weights table with the final numbers so the result can be reproduced.
 
@@ -238,6 +272,14 @@ Answers: *what should this specific role pay, at this company, in this location?
 6. **Employer type:** a US-owned or scale-up employer band is not a proxy for a German incumbent; note when the only market data comes from a different employer profile.
 7. **Posted range wins:** if the posting states a range, report it first (tier F) and use the other sources to say where in the range this candidate would likely land.
 
+**Helper use of the Trust in SODA guide** (diagnostic — it adds no weight beyond its single tier-C entry above, so nothing is double-counted):
+1. **Level mapping.** It shows how the market prices Senior vs Staff vs Principal for the stack. Use it to resolve an ambiguous title like "(Staff)" and to choose which two adjacent levels to compute.
+2. **Stack track.** Name the matching track and, when the posting's stack is a premium track (e.g. Go, Python, Rust), state its premium over the Java track at the same level.
+3. **Cross-check band.** For the Tier A/B result, say whether its Mid sits **inside / below / above** the guide's band for that level and stack, by how many € and %, and where in the band it falls (0% = band minimum, 100% = band maximum). Below the band means the employer pays under recruiter-market rates — report it, do not "correct" it upward; above means a premium payer.
+4. **Level step-up.** Quote the guide's mid-band ratio between adjacent levels (e.g. Staff ÷ Senior). If company data exists only for an adjacent level, show a separate **level-scaled cross-check** line (adjacent-level Mid × ratio). It is a sanity check; it does not replace the adjacent-level multiplier and is not blended into the range.
+5. **Gap filler.** If there is no Tier A/B data for this company and city, the guide band plus the other tier C/D sources becomes the anchor, and confidence is capped at Low–Medium with that stated.
+Caveats to repeat when used: recruiter-mandate bands, Germany-wide, no sample size, "Founding" and "Lead" rows are not Staff-equivalent.
+
 **Expected range `[estimated]`:**
 | | Base | Total comp |
 |---|------|-----------|
@@ -247,6 +289,7 @@ Answers: *what should this specific role pay, at this company, in this location?
 | Stretch (only if [named condition, e.g. scoped as Senior Staff / strong negotiation]) | €X | €X |
 
 - **Basis:** the weights table and the arithmetic (one line per end), plus the sensitivity line (verified-only A + B range).
+- **Guide cross-check (Trust in SODA):** [track · level] band €X–€Y (updated <month year>) · Mid sits [inside / below / above] by €X (X%), at X% of the band · stack premium vs Java: [€/% or n/a] · level step-up [Senior → Staff]: ×[ratio] · level-scaled cross-check: €X.
 - **Confidence:** High / Medium / Low, and why (sample size, recency, level match, source agreement).
 - **Disagreements:** name sources that conflict and the most likely reason (level, date, base vs TC, employer type). Do not hide outliers.
 - **Versus the candidate's PROFILE floor:** below / within / above the range.
@@ -344,6 +387,7 @@ List every source searched and whether it returned relevant data:
 - 💰 Comprehensive.io: [link or "no results"]
 - 💰 Glassdoor salaries: [link, "modeled estimate only", "source blocked", or "no results"]
 - 💰 Payscale: [link + last-updated date, or "no results"]
+- 💰 Trust in SODA salary guide (Germany): [link + track + "last updated", "not applicable (non-Germany)", or "no results"]
 - 💰 StepStone / gehalt.de / Kununu Gehalt: [link or "no results"]
 - 📉 Layoffs.fyi: [link or "no results"]
 - 💼 LinkedIn Jobs: [link or "no results"]
@@ -591,7 +635,7 @@ List the candidate's real gaps against this specific role (tech stack, language/
 ## Salary Check Mode
 
 If the user only asks what a role pays ("what's the salary for this role", "expected range for <posting URL>"), do **not** produce the full report. Read the posting (title, level, location, any stated range), run the Compensation research steps, and return only:
-Target line → source table → **Expected range `[estimated]`** → confidence, disagreements, versus-PROFILE-floor, missing data, and a Sources list. Offer the full evaluation afterwards.
+Target line → **Levels.fyi by-level table** → source table → **Expected range `[estimated]`** → confidence, disagreements, versus-PROFILE-floor, missing data, and a Sources list. Offer the full evaluation afterwards.
 
 If the URL's site region differs from the job's actual location (e.g. a `/us/` career-site path for a job located in Germany), use the **job's stated location**, and say so.
 
@@ -667,6 +711,7 @@ Conventions: source `.md` lives under `interviews/<company>/`; generated `.html`
 - Employee Happiness must be backed by independent review data. No data → cap the pillar at 10 and cap confidence at Low; never infer happiness from job-post language.
 - Layoffs within the last 12 months: flag as ⚠️ in both QUICK OVERVIEW and CANDIDATE FIT.
 - **Every full report has a Company Research Checklist** with all four groups completed or explicitly marked ⚠️/❌ — never silently dropped. Keep the answers tied to sources; the checklist must not replace the Pros/Cons, Layoff History or Interview Prep sections, only link to them where they overlap. It is omitted in Salary Check Mode.
+- **Levels.fyi is mandatory in every report and in Salary Check Mode, and is always presented per level.** Retrieve the company-scoped and market-scoped pages, show one row per level (base / stock / bonus / TC / n / dates) with the target level marked, and follow the retrieval fallbacks in Compensation step 3 (embedded page data, Chrome tools, techpays) before ever writing "no data". A report without the by-level table is incomplete.
 - **Every report has an Expected Salary Range** built from every source that returns a figure (Levels.fyi, Glassdoor, Payscale, local sources, the posting), combined with the published weights and shown with the verified-only sensitivity line. Never present a single source as "the market", and never drop a stale, tiny, or modeled source — include it at reduced weight and flag it; blocked or empty sources are listed as such.
 - **Never report base salary as if it were the package** — always produce the Total Compensation breakdown.
 - **Never present a CVI without its pillar table and Assumptions Ledger.** A bare number is not a finding.
