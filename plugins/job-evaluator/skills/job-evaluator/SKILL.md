@@ -1,6 +1,6 @@
 ---
 name: job-evaluator
-description: Given one or more company names, URLs, or offers, produces a comprehensive job evaluation report tailored to the candidate profile defined in PROFILE.md, including an Expected Salary Range triangulated from Levels.fyi, Glassdoor, Payscale and local sources, and a Career Value Index (CVI v2) that scores business domain and value of the work, tech-stack fit, employee happiness, career capital, compensation vs. threshold (with Fair Share Ratio), equity upside, and stability. Searches Glassdoor, Kununu, Levels.fyi, LinkedIn, Remotely.de, Xing, Indeed.de, Monster.de, Comprehensive.io, Layoffs.fyi, Hiring.cafe, Builtin.com, and Wellfound.com. Use this skill when the user provides company names, URLs, or offers, researches job listings, or uses phrases like "evaluate this company", "should I apply here", "compare these offers", "which offer should I take", "what's the salary", "is this a fair offer", "what are the employee reviews", "compare these companies". Also use it for "setup job-evaluator" / "update my profile": if no candidate PROFILE.md exists yet, it first runs a guided setup interview to capture the user's expectations.
+description: Given one or more company names, URLs, or offers, produces a comprehensive job evaluation report tailored to the candidate profile defined in PROFILE.md, including an Expected Salary Range triangulated from Levels.fyi, Glassdoor, Payscale and local sources, and a Career Value Index (CVI v2) that scores business domain and value of the work, tech-stack fit, employee happiness, career capital, compensation vs. threshold (with Fair Share Ratio), equity upside, and stability. Searches Glassdoor, Kununu, Levels.fyi, LinkedIn, Remotely.de, Xing, de.indeed.com, StepStone (stepstone.de), Monster.de, Comprehensive.io, Layoffs.fyi, Hiring.cafe, Builtin.com, and Wellfound.com. Use this skill when the user provides company names, URLs, or offers, researches job listings, or uses phrases like "evaluate this company", "should I apply here", "compare these offers", "which offer should I take", "what's the salary", "is this a fair offer", "what are the employee reviews", "compare these companies". Also use it for "setup job-evaluator" / "update my profile": if no candidate PROFILE.md exists yet, it first runs a guided setup interview to capture the user's expectations.
 ---
 
 # Job Evaluator Skill
@@ -113,7 +113,7 @@ that returns nothing is reported as such, never skipped silently.
 5. **Glassdoor:** `[company name] [role] salary [city] Glassdoor` → company and role pay. Distinguish **submitted** salaries from Glassdoor's
    **modeled "estimated" pay** (an estimate based on 0–few submissions is low-quality evidence — include it at tier E weight, convert its currency, and flag it as modeled).
 6. **Payscale:** `[role] salary [city] Payscale` → average, range, sample size, **"last updated" date** (report the date; Payscale pages are often years old, so they get the recency multiplier, not removal).
-7. **Local sources (Germany/DACH):** StepStone Gehaltsreport, gehalt.de, Kununu Gehalt, `[title] Gehalt [city]` → median and range by title.
+7. **Local sources (Germany/DACH):** StepStone Gehaltsreport (`site:stepstone.de`), de.indeed.com salary pages (`de.indeed.com/career/<title>/salaries`), gehalt.de, Kununu Gehalt, `[title] Gehalt [city]` → median and range by title.
 8. **Comprehensive.io:** `[company name] site:app.comprehensive.io/benchmarking/postings` → posted salary ranges for the target role.
 9. **Trust in SODA salary guide (Germany roles only):** `https://www.trustinsoda.com/salary-guides/software-engineering-germany` → recruiter-compiled
    permanent-salary bands by **stack track** (.NET, Java, Python, Go, Ruby, JavaScript/TypeScript, Frontend, Full Stack, C++/Systems, Rust) and **level**
@@ -135,13 +135,14 @@ Search all sources below. Consolidate all matching positions into one table. Onl
 12. **LinkedIn:** `[company name] [target roles] jobs [candidate location preferences]`
 13. **Greenhouse:** `[company name] site:job-boards.greenhouse.io` or `[company name] site:job-boards.eu.greenhouse.io` → direct ATS listings with apply links
 14. **Xing:** `[company name] Xing Stellenangebote [target roles]`
-15. **Indeed.de:** `[company name] indeed.de [target roles]`
-16. **Monster.de:** `[company name] monster.de engineer jobs`
-17. **Remotely.de:** `[company name] remotely.de engineer`
-18. **Hiring.cafe:** `[company name] site:hiring.cafe` or `[company name] hiring.cafe [target role] remote`
-19. **Builtin.com:** `[company name] site:builtin.com [target role]`
-20. **Wellfound.com:** `[company name] site:wellfound.com [target role]`
-21. **Careers page:** `[company name] careers jobs [target roles]`
+15. **Indeed (de.indeed.com):** `[company name] [target roles] site:de.indeed.com` → postings and the company page (`de.indeed.com/cmp/<company>`)
+16. **StepStone (stepstone.de):** `[company name] [target roles] site:stepstone.de` → postings and the company page
+17. **Monster.de:** `[company name] monster.de engineer jobs`
+18. **Remotely.de:** `[company name] remotely.de engineer`
+19. **Hiring.cafe:** `[company name] site:hiring.cafe` or `[company name] hiring.cafe [target role] remote`
+20. **Builtin.com:** `[company name] site:builtin.com [target role]`
+21. **Wellfound.com:** `[company name] site:wellfound.com [target role]`
+22. **Careers page:** `[company name] careers jobs [target roles]`
 
 ### Stability
 22. **Layoffs.fyi:** `[company name] layoffs.fyi` → layoff events, dates, headcount reductions
@@ -242,7 +243,7 @@ If a level has no submissions write "no data" in its row rather than dropping it
 | [Levels.fyi — market](url) | [All companies · Senior · Munich] | n=X | updated <date> | p25–p75 €X–€Y | … | … |
 | [Glassdoor](url) | … | n=X or "0, modeled" | … | … | … | … |
 | [Payscale](url) | … | n=X | last updated <date> | … | … | … |
-| [StepStone / gehalt.de / Kununu](url) | … | … | … | … | … | … |
+| [StepStone / Indeed / gehalt.de / Kununu](url) | … | … | … | … | … | … |
 | [Trust in SODA guide](url) | [Germany-wide · <stack> track · <level>] | n undisclosed | updated <month year> | €X–€Y | n/a | C · 1.0 |
 | [Comprehensive.io](url) / [Job posting](url) | … | … | … | … | … | … |
 
@@ -253,7 +254,7 @@ If a level has no submissions write "no data" in its row rather than dropping it
 | F | Range stated in the job posting | 5 (anchor) |
 | A | Verified submissions — this company + this location + this level (e.g. Levels.fyi company page) | 4 |
 | B | Verified submissions — same location + level, all companies (e.g. Levels.fyi market page) | 2 |
-| C | Local / market guides — StepStone, gehalt.de, Kununu Gehalt, and the Trust in SODA recruiter guide | 1 |
+| C | Local / market guides — StepStone, de.indeed.com, gehalt.de, Kununu Gehalt, and the Trust in SODA recruiter guide | 1 |
 | D | Survey-based profiles (Payscale and similar) | 1 |
 | E | Modeled / estimated pay (Glassdoor "estimated", calculators) | 0.5 |
 
@@ -388,11 +389,12 @@ List every source searched and whether it returned relevant data:
 - 💰 Glassdoor salaries: [link, "modeled estimate only", "source blocked", or "no results"]
 - 💰 Payscale: [link + last-updated date, or "no results"]
 - 💰 Trust in SODA salary guide (Germany): [link + track + "last updated", "not applicable (non-Germany)", or "no results"]
-- 💰 StepStone / gehalt.de / Kununu Gehalt: [link or "no results"]
+- 💰 StepStone / Indeed / gehalt.de / Kununu Gehalt: [link or "no results"]
 - 📉 Layoffs.fyi: [link or "no results"]
 - 💼 LinkedIn Jobs: [link or "no results"]
 - 💼 Xing Jobs: [link or "no results"]
-- 💼 Indeed.de: [link or "no results"]
+- 💼 Indeed (de.indeed.com): [link or "no results"]
+- 💼 StepStone (stepstone.de): [link or "no results"]
 - 💼 Monster.de: [link or "no results"]
 - 🌐 Remotely.de: [link or "no results"]
 - ☕ Hiring.cafe: [link or "no results"]
