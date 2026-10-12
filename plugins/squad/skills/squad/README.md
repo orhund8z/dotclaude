@@ -8,16 +8,17 @@ persona **subagents** it delegates to.
 
 ## What it does
 
-You give it product context and requirements. It asks clarifying questions first, picks an
-**effort** level (see below), then drives the lifecycle: defining scope, choosing a stack and
-architecture, implementing with tests, and gating the result through a quality + security review
-before "go live". Everything is documented as versioned artifacts under `docs/squad/`, and new
+You give it product context and requirements. It asks **everything up front in one batch** —
+clarifying questions, the **effort** level (see below), and which **model / reasoning** each
+persona runs on — then drafts a plan for your approval. Once you approve the plan it **runs to
+completion without asking you anything else**: implementing with tests and gating the result
+through a quality + security review before "go live". Everything is documented as versioned artifacts under `docs/squad/`, and new
 requirements loop back into Analyze rather than restarting.
 
 ## Effort modes
 
-One knob controls how much gets built and how heavy the process is. If you don't specify one, it
-defaults to **medium** and tells you which it's running.
+One knob controls how much gets built and how heavy the process is. You pick it in the kickoff
+batch (it preselects what your request implies, otherwise recommends **medium**).
 
 | Effort | What ships | Process weight |
 |---|---|---|
@@ -25,8 +26,8 @@ defaults to **medium** and tells you which it's running.
 | **medium** *(default)* | Code + tests for the major functionality; minimal extras. | Lean Analyze/Plan → Dev → one Reviewer pass. `README.md` + `SPEC.md`. |
 | **high** | Everything — ≥90% coverage on critical logic, edge cases, ADRs, full docs. | All six personas, Reviewer + SecOps in parallel, up to 3 review rounds. |
 
-Say *"low effort"*, *"quick"*, or *"the works / production-grade"* to pick; high-risk work
-(auth, payments, data loss) prompts a recommendation to bump up regardless.
+Say *"low effort"*, *"quick"*, or *"the works / production-grade"* in your request to preselect
+it; high-risk work (auth, payments, data loss) prompts a recommendation to bump up regardless.
 
 ![The effort dial — low, medium (default), high — scaling the depth of tests, docs, and review](./images/squad-effort.png)
 
@@ -50,8 +51,9 @@ so that one component owns *control flow* and the others own *domain thinking* �
 ### The two roles
 
 - **Orchestrator (the skill).** Runs on the main thread. It does **not** do deep design or write
-  production code. It sequences the phases, invokes the right persona at the right time, runs the
-  human decision gates, bumps artifact versions, updates `STATE.md`, and handles escalation.
+  production code. It sequences the phases, invokes the right persona at the right time, asks the
+  kickoff questions, runs the plan approval gate, makes (and logs) every decision after it, bumps
+  artifact versions, updates `STATE.md`, and handles hard stops.
 - **Personas (the subagents).** Each is a specialist invoked via the **Agent tool**. It does the
   domain work for its phase, writes its own artifact, and returns a compact structured handoff.
 
@@ -69,8 +71,9 @@ so that one component owns *control flow* and the others own *domain thinking* �
   be flagging.
 - **Reasoning where the leverage is.** Each persona runs on its own model and reasoning effort,
   whatever model the session was started with (see [Model roster](#model-roster)). The strongest
-  model sits on **Product Manager (Analyze)** and **Architect (Plan)** — scope and architecture are
-  the costliest things to get wrong. Execution and review roles run a capable coding model.
+  model sits on the **CEO (direction)**, **Product Manager (Analyze)** and **Architect (Plan)** —
+  direction, scope and architecture are the costliest things to get wrong. Execution and review
+  roles run a capable coding model.
 - **Parallelism where it is safe.** Independent personas run concurrently. In Review, `squad-reviewer`
   and `squad-secops` are invoked in the same turn (two Agent calls, one message); phases with a real
   dependency stay sequential.
@@ -79,18 +82,18 @@ so that one component owns *control flow* and the others own *domain thinking* �
 
 | Persona | Model | Reasoning |
 |---|---|---|
-| CEO | `sonnet` | `medium` |
+| CEO | `opus` | `medium` |
 | Product Manager | `opus` | `high` |
 | Architect | `opus` | `high` |
 | Developer | `sonnet` | `medium` |
 | Reviewer | `sonnet` | `high` |
 | SecOps | `sonnet` | `high` |
 
-These are the personas' frontmatter defaults. At kickoff the orchestrator shows the roster and asks
-you to confirm it (use defaults / everyone on the session model / customise), stores it in
-`STATE.md`, and passes `model` + `effort` explicitly on every Agent call, so a CEO on `sonnet` is
-followed by an Architect on `opus` no matter which model you started the session with. You can
-change any row at kickoff or at the plan gate.
+These are the personas' frontmatter defaults. The kickoff batch shows the roster and asks you to
+confirm it (use defaults / everyone on the session model / everyone on `opus` / customise), stores
+it in `STATE.md`, and passes `model` + `effort` explicitly on every Agent call, so an Architect on
+`opus` is followed by a Developer on `sonnet` no matter which model you started the session with.
+You can change any row at kickoff or at the plan gate — not after.
 
 *Reasoning* (`low`…`max`) is how hard one model thinks; it is separate from the run's **effort**
 (low/medium/high), which scales what gets built.
@@ -114,8 +117,9 @@ FINDINGS:   <review/security only: {severity, area, issue, fix}>
 NEXT:       <recommended next action>
 ```
 
-The orchestrator routes on `STATUS`: `ok` → advance; `needs-user-decision` → run a decision gate;
-`changes-requested` → loop back to the Developer; `blocked` → escalate to the user.
+The orchestrator routes on `STATUS`: `ok` → advance; `needs-user-decision` → folded into the plan
+before approval, decided by the orchestrator (and logged) after it — never a mid-run question;
+`changes-requested` → loop back to the Developer; `blocked` → worked around, or a hard stop.
 
 ### State & versioning
 
@@ -123,7 +127,7 @@ All lifecycle artifacts live under `docs/squad/`:
 
 ```
 docs/squad/
-├── STATE.md            # effort, model roster, current phase, artifact versions, open decisions — the resume point
+├── STATE.md            # effort, model roster, kickoff answers, current phase, artifact versions, decisions taken — the resume point
 ├── analyze-vN.md       # scope, acceptance criteria, success metrics
 ├── plan-vN.md          # the plan you approve: goal, FR/NFR, definition of success, architecture, stack, work plan
 ├── dev-vN.md           # implementation notes
@@ -138,41 +142,53 @@ from it instead of restarting.
 
 ## How it works (the lifecycle)
 
-The orchestrator opens with clarifying questions, picks an effort level, confirms the model roster
-with you, then runs the loop. Each
-phase invokes its owner persona, collects the handoff, updates `STATE.md`, and clears a gate.
+You are asked things at exactly two points:
+
+1. **Kickoff** — one question batch: clarifying questions that change scope or design, the effort
+   level, and the model / reasoning roster.
+2. **Plan approval** — you approve `plan-vN.md` (or change it) before any code is written.
+
+After that the orchestrator runs to completion on its own: each phase invokes its owner persona,
+collects the handoff, updates `STATE.md`, and clears its gate. Choices that come up mid-run are
+made by the orchestrator (the persona's recommendation, or the most conservative option), logged
+under *Decisions taken*, and listed in the final report. It stops early only on a **hard stop** —
+a missing credential/access, an irreversible action the plan didn't cover, or a security blocker
+with no fix inside the approved scope.
 
 ![The lifecycle — Analyze → Plan → Dev → Review → Monitor, a loop not a line, with findings looping back to Dev and new requirements back to Analyze](./images/squad-lifecycle.png)
 
-1. **Pick effort first** (low / medium / high — see the table above). It scales both what gets
+1. **Kickoff** — one question batch (clarifications, effort, roster). Effort scales both what gets
    built and which personas run: low collapses to Plan → Dev with an inline check; medium runs one
    Reviewer pass; high runs the full parallel Reviewer + SecOps loop.
 2. **Analyze** (`squad-product-manager`, direction from `squad-ceo`). Scope, acceptance criteria,
-   success metrics → `analyze-vN.md`. **Gate:** user confirms scope.
-3. **Plan** (`squad-architect`, with Developer/PM input). Tech stack + architecture, 2–3 options with
-   pros/cons/cost, ADRs → `plan-vN.md` + `docs/adr/*`. On security/data-sensitive designs it
+   success metrics, assumptions → `analyze-vN.md`. No separate gate — scope is approved with the plan.
+3. **Plan** (`squad-architect`, with Developer/PM input). Tech stack + architecture, the options
+   weighed with pros/cons/cost and the recommended one, ADRs → `plan-vN.md` + `docs/adr/*`. On security/data-sensitive designs it
    **shifts left**, consulting SecOps (threat model) and Reviewer (testability) here.
    **Gate (every effort, before any code):** you approve `plan-vN.md` — a short document covering
-   the goal, functional and non-functional requirements, definition of success, architecture, tech
-   stack and why, test & verification strategy, risks, and a **work plan** table:
+   the goal, scope, functional and non-functional requirements, definition of success,
+   architecture, tech stack and why, **assumptions & decisions taken**, test & verification
+   strategy, risks, and a **work plan** table:
 
    | # | Work item | Persona | Model | Reasoning | Output | How it's verified |
    |---|---|---|---|---|---|---|
 
    Approve it, change who does what (persona, model, reasoning), or send scope/design back. Every
-   change writes a new plan version.
+   change writes a new plan version. **This is the last question you're asked.**
 4. **Dev** (`squad-developer`). Implement to the approved plan; tests per effort (≥90% on critical
    logic at high); durable `README.md`/`SPEC.md` + `dev-vN.md`. **Gate:** build + tests pass locally.
 5. **Review** (`squad-reviewer` + `squad-secops`, in parallel). Findings tagged by severity go back to
-   the Developer. **Bounded loop: at most 3 Dev↔Review rounds**, then escalate. **Gate:** Definition
+   the Developer. **Bounded loop: at most 3 Dev↔Review rounds**; anything still open is reported,
+   not asked about. **Gate:** Definition
    of Done — build green, coverage met, zero open blocker/major findings, docs updated, acceptance
    criteria satisfied.
-6. **Monitor** (`squad-ceo` + PM). Verify the output against goals. New requirements loop back into
-   **Analyze** — artifacts and product are revised, not restarted.
+6. **Monitor** (`squad-ceo` + PM). Verify the output against goals and deliver the **final report**:
+   what was built, how to run it, test/coverage results, decisions taken during the run, open items.
+   New requirements you raise afterwards loop back into **Analyze** — artifacts and product are
+   revised, not restarted.
 
-At consequential decisions the team presents **2–3 concrete options** with trade-offs and a
-recommendation, and lets the user choose. For reversible, low-stakes choices it picks a sensible
-default and moves on.
+Consequential choices are surfaced **in the plan** — options with trade-offs and the recommended
+one — so you decide them once, at approval. After that, the orchestrator decides and logs.
 
 ## Personas (subagents)
 
@@ -218,4 +234,5 @@ files when the process changes.
 ## Kickoff
 
 Just describe what you want built, e.g. *"build me a URL-shortener service"* or *"run the squad on
-this feature"*. The team opens with clarifying questions, then begins at **Analyze**.
+this feature"*. The team opens with one batch of questions (clarifications, effort, models &
+reasoning), comes back once with the plan for approval, then runs to completion.

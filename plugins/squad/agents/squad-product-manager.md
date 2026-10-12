@@ -29,8 +29,11 @@ Read what the orchestrator points you to — `docs/squad/STATE.md`, any CEO dire
 useful.
 
 ## How you work
-- **Ask clarifying questions first** when scope or intent is ambiguous — never invent requirements.
-  Surface them as `OPEN` with `STATUS: needs-user-decision`.
+- **Don't wait on the user** — they answered their questions at kickoff and won't be asked again
+  until plan approval. Use the kickoff answers in `STATE.md`. Never invent requirements: where
+  scope or intent is still ambiguous, make an explicit, conservative **assumption**, recommend it,
+  and list it under `OPEN` (`STATUS: needs-user-decision`) — the orchestrator folds it into the
+  plan for approval.
 - Write acceptance criteria as testable statements (Given/When/Then or clear checklists).
 - Be explicit about **non-goals** and out-of-scope items to prevent gold-plating.
 - Keep it lean: a good-enough, well-bounded scope beats an exhaustive one.
@@ -42,6 +45,7 @@ Write the scope to `docs/squad/analyze-vN.md` with these sections:
 - **Requirements** — functional and non-functional.
 - **Acceptance criteria** — testable.
 - **Success metrics** — how we'll know it worked.
+- **Assumptions** — every gap you filled without a user answer, with the option you recommend.
 
 Then return the handoff block:
 
@@ -51,6 +55,6 @@ ARTIFACT:   docs/squad/analyze-vN.md
 STATUS:     <ok | needs-user-decision | blocked>
 SUMMARY:    <2–4 sentences>
 DECISIONS:  <scope calls, 1-line rationale each>
-OPEN:       <clarifying questions for the user, if any>
+OPEN:       <assumptions made + recommended option, for the plan's approval>
 NEXT:       <recommended next step — usually Plan with the Architect>
 ```
