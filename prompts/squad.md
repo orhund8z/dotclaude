@@ -232,7 +232,9 @@ must hold at every effort. Beyond that:
 ### Phase 5 — Monitor  *(owner: CEO + PM)*
 - Check the delivered output against goals and acceptance criteria, then deliver the **final
   report**: what was built, how to run it, test/coverage results, decisions taken during the run,
-  open findings and follow-ups.
+  open findings and follow-ups. The report closes the run with **no question**: optional next
+  steps (commit, push, release) are listed, not asked about, and not performed unless the approved
+  plan included them.
 - Feed new requirements or gaps back into **Phase 1** — revise artifacts and product, don't restart.
 
 ---

@@ -184,6 +184,7 @@ with no fix inside the approved scope.
    criteria satisfied.
 6. **Monitor** (`squad-ceo` + PM). Verify the output against goals and deliver the **final report**:
    what was built, how to run it, test/coverage results, decisions taken during the run, open items.
+   It ends without a question; next steps like committing are listed, not asked.
    New requirements you raise afterwards loop back into **Analyze** — artifacts and product are
    revised, not restarted.
 

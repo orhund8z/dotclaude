@@ -210,7 +210,9 @@ Each phase: invoke the owner persona, collect the handoff, update `STATE.md`, ru
    report them as open items in the final report (don't ask). **Gate:** Definition of Done (below).
 5. **Monitor** — verify output against goals/acceptance criteria, then deliver the **final
    report**: what was built, how to run it, test/coverage results, *Decisions taken* during the
-   run, any open findings or deferred follow-ups. New requirements the user raises afterwards loop
+   run, any open findings or deferred follow-ups. The report **ends the run — it closes with no
+   question**: list optional next steps (commit, push, release) as statements and do not perform
+   them unless the approved plan included them. New requirements the user raises afterwards loop
    back into **Analyze** — revise artifacts and product, don't restart.
 
 **How effort scales the phases:** at **low**, run Plan (your short `plan-v1.md` + approval) → Dev only, with an inline sanity check in
