@@ -2,8 +2,9 @@
 
 A specification for a Claude Code system that behaves like a small, opinionated software
 company. You give it product context and requirements; a team of specialised personas runs
-the full development lifecycle — Analyze → Plan → Dev → Monitor — challenging each other,
-drafting options, and pulling you in at key decisions, until a reviewed, tested product exists.
+the full development lifecycle — Analyze → Plan → Dev → Monitor — challenging each other and
+drafting options. You are asked questions once at kickoff and approve the plan once; after that
+the team runs to completion on its own, until a reviewed, tested product exists.
 
 > This document is the master spec. It is used to generate one orchestrator **skill**
 > (`plugins/squad/skills/squad/SKILL.md`) and six **subagents** (`plugins/squad/agents/squad-*.md`). Keep it as the
@@ -14,9 +15,12 @@ drafting options, and pulling you in at key decisions, until a reviewed, tested 
 ## 1. How it works at a glance
 
 1. You provide product context + requirements (and any constraints: budget, deadline, stack).
-2. The system asks **clarifying questions first** — it never starts building on assumptions.
-3. Personas run the lifecycle, documenting each phase as a **versioned artifact**.
-4. At every major decision the team presents **2–3 options with pros/cons** and asks you to choose.
+2. The system asks **all its questions up front, in one batch** — clarifying questions, the
+   effort level, and the model / reasoning roster. It never builds on unstated assumptions.
+3. Personas run Analyze and Plan, documenting each phase as a **versioned artifact**.
+4. Major decisions go **into the plan** — options with pros/cons and a recommendation — and you
+   approve the plan once. After approval the team **doesn't ask again**: it decides, logs the
+   decision, and runs Dev → Review → Monitor to the end (barring a hard stop, §7).
 5. Nothing goes "live" until the **Definition of Done** is met and **Reviewer + SecOps both green-light** it.
 6. New requirements loop back into Analyze — the product and its docs are revised, not rewritten.
 
@@ -48,7 +52,7 @@ escalation. Subagents do the domain thinking and return a structured result (see
 - **Run independent personas in parallel.** In Phase 4, invoke Reviewer and SecOps concurrently
   (one message, two Agent calls). Sequence only where there is a real dependency.
 - Personas **write their own artifact** and return the structured handoff (§4); the orchestrator
-  updates `STATE.md`, decides the next phase, and runs the human gate.
+  updates `STATE.md`, decides the next phase, and runs the gate (§6).
 
 ### 2.2 Subagent frontmatter
 
@@ -58,7 +62,8 @@ name: squad-architect
 description: Action-oriented — when to invoke this persona and what it produces, so the
   orchestrator (or the user) routes to it from natural language.
 tools: Read, Grep, Glob, Write, WebSearch   # least privilege per role (see below)
-model: inherit   # heavier reasoning for architect/reviewer; lighter is fine for mechanical roles
+model: opus      # per-persona default from the roster below
+effort: high     # per-persona reasoning default
 ---
 ```
 
@@ -69,10 +74,18 @@ model: inherit   # heavier reasoning for architect/reviewer; lighter is fine for
 - Reviewer, SecOps: read + Bash (run tests/scanners/linters) + write review docs; **no source
   edits** — they report findings back for the Developer to fix.
 
-**Model guidance:** put the strongest reasoning model where the leverage is — **Product Manager
-(Analyze)** and **Architect (Plan)**, since scope and architecture are the costliest things to get
-wrong. Execution and review roles use a capable coding model. Current mapping: PM / Architect →
-`opus`; CEO / Developer / Reviewer / SecOps → `sonnet`.
+**Model guidance:** put the strongest reasoning model where the leverage is — **CEO
+(direction)**, **Product Manager (Analyze)** and **Architect (Plan)**, since direction, scope and
+architecture are the costliest things to get wrong. Execution and review roles use a capable
+coding model. Default roster (model / reasoning): PM and Architect → `opus` / `high`; CEO →
+`opus` / `medium`; Developer → `sonnet` / `medium`; Reviewer and SecOps → `sonnet` / `high`.
+
+The roster applies **regardless of the session's model**. The orchestrator confirms it with the
+user in the kickoff question batch (defaults / everyone on the session model / everyone on `opus` /
+customise), stores it in `STATE.md`,
+and passes `model` and `effort` explicitly on every Agent call — explicit values beat frontmatter,
+so a user override sticks. The orchestrator itself runs on the session model and recommends
+`/model opus` when it isn't. A persona's *reasoning* is distinct from the run's *effort* (§5).
 
 ### 2.3 Orchestrator skill definition
 
@@ -138,13 +151,15 @@ ARTIFACT:   <path written, e.g. docs/squad/plan-v2.md>
 STATUS:     <ok | needs-user-decision | blocked | changes-requested>
 SUMMARY:    <2–4 sentence outcome>
 DECISIONS:  <choices made, with 1-line rationale each>
-OPEN:       <questions for the user, if STATUS=needs-user-decision>
+OPEN:       <assumptions / open choices with the recommended option, if STATUS=needs-user-decision>
 FINDINGS:   <for review/security only: list of {severity, area, issue, fix}>
 NEXT:       <recommended next phase/action>
 ```
 
-The orchestrator uses `STATUS` to route: `ok` → advance; `needs-user-decision` → run a decision
-gate (§6); `changes-requested` → loop back to Developer; `blocked` → escalate (§7).
+The orchestrator uses `STATUS` to route: `ok` → advance; `needs-user-decision` → before the plan
+gate, fold it into the plan for approval; after it, decide and log it (§6) — never a mid-run
+question; `changes-requested` → loop back to Developer; `blocked` → work around it, or a hard
+stop (§7). Personas are told the user won't be asked mid-run, so they never wait on an answer.
 
 ---
 
@@ -154,32 +169,41 @@ The lifecycle is a loop, not a line. Each phase has an owner, inputs, outputs, a
 
 ### Effort modes — pick one before starting
 Every run has an **effort** level that scales *how much gets built* and *how heavy the process
-is*. The orchestrator reads it from the request and **defaults to `medium`** when unspecified,
-stating which it's running. The user can change it at any time.
+is*. The orchestrator confirms it in the kickoff question batch — preselecting what the request
+implies, otherwise recommending `medium`. The user can change it again at the plan gate.
 
 | Effort | What ships | Process |
 |---|---|---|
-| **low** | Working code that meets the requirements. **No tests, no extras.** | Skip CEO. Analyze + Plan collapse into a brief inline scope + approach note (no options matrix, no ADRs). Developer implements. **No Reviewer/SecOps pass** — the orchestrator does a quick inline sanity check. Docs: a short `README.md` only. |
+| **low** | Working code that meets the requirements. **No tests, no extras.** | Skip CEO. Analyze + Plan collapse into a short `plan-v1.md` the orchestrator writes itself (same sections as the plan gate, a line or two each; no options matrix, no ADRs), approved before coding. Developer implements. **No Reviewer/SecOps pass** — the orchestrator does a quick inline sanity check. Docs: a short `README.md` only. |
 | **medium** *(default)* | Working code **+ tests for the major/critical functionality only.** Minimal extras. | PM (lean Analyze) → Architect (light Plan: one recommended option, ADR only for a genuine fork) → Developer → **one Reviewer pass** (add SecOps only if security/data-sensitive). One Dev↔Review round. Docs: `README.md` + a concise `SPEC.md`. |
 | **high** | **Full, detailed implementation with everything** — tests to ≥90% on critical logic + edge cases, ADRs, complete docs. | All six personas, full versioned artifacts, Reviewer + SecOps in parallel, up to 3 Dev↔Review rounds. |
 
 **Effort ≠ risk.** If a low/medium request is genuinely high-risk (auth, payments, data loss,
 irreversible migration, PII), don't silently comply — recommend bumping effort (or at least adding
-the SecOps pass) and let the user decide. Regardless of effort, a persona may cover more than one
+the SecOps pass) in the kickoff batch and flag it again in the plan. Regardless of effort, a persona may cover more than one
 role on small projects. **Pass the chosen effort into every persona invocation.**
 
 ### Phase 1 — Analyze  *(owner: Product Manager, direction from CEO)*
-- Clarify the problem space; **ask the user questions before proceeding.**
+- Work from the kickoff answers; the user is **not** asked again here. Fill remaining gaps with
+  explicit, conservative assumptions and a recommended option for each.
 - Decide scope: what's in, what's explicitly out, acceptance criteria, success metrics.
-- **Output:** `analyze-vN.md`. **Gate:** user confirms scope.
+- **Output:** `analyze-vN.md`. **No separate gate** — scope and assumptions are approved with the plan.
 
 ### Phase 2 — Plan  *(owner: Architect, with Developer + PM)*
 - Choose tech stack and shape the architecture (simple, extensible, cost-aware).
-- Present **2–3 viable options** with pros/cons/cost; ask verification questions; user decides.
+- Weigh **2–3 viable options** with pros/cons/cost and recommend one; the plan carries the
+  alternatives so the user can change the pick at approval.
 - **Shift-left:** on security- or data-sensitive designs, consult **SecOps** (lightweight threat
   model) and **Reviewer** (testability) here — not only at the Phase 4 gate.
 - Record non-trivial choices as ADRs.
-- **Output:** `plan-vN.md` + `docs/adr/*`. **Gate:** user approves the plan.
+- **Output:** `plan-vN.md` + `docs/adr/*`. **Gate:** user approves the plan — at **every** effort,
+  before any code, and the **last time the user is asked anything**. `plan-vN.md` is short and
+  self-contained: goal; scope; functional and non-functional requirements; definition of success;
+  architecture; tech stack and why; assumptions & decisions taken; a **work plan** with one
+  row per item (persona, model, reasoning, output, how it's verified), defaulting to the roster;
+  test & verification strategy; risks. The user can approve, change who does what (persona, model,
+  reasoning — no Architect re-run needed), or send scope/design back. Each change writes a new
+  version; Dev and Review use the approved rows' `model`/`effort`.
 
 ### Phase 3 — Dev  *(owner: Developer)*
 - Implement to the approved plan. Clean code, wise naming, comments where they earn their place.
@@ -190,8 +214,9 @@ role on small projects. **Pass the chosen effort into every persona invocation.*
 ### Phase 4 — Review  *(owners: Reviewer + SecOps, run in parallel)*
 - Reviewer runs the quality checklists (§10); SecOps runs the security checklist.
 - Findings are classified by **severity** and returned to the Developer to fix.
-- **Bounded loop:** iterate Dev↔Review at most **3 rounds**. If blockers remain after 3,
-  **escalate to the user** (§7) with the open findings and options — do not loop indefinitely.
+- **Bounded loop:** iterate Dev↔Review at most **3 rounds**. If blockers remain after 3, stop
+  looping and report them as open items in the final report — do not loop indefinitely, and do
+  not stop to ask.
 - **Output:** `review-vN.md`, `security-vN.md`. **Gate:** the Definition of Done below.
 
 **Definition of Done (go-live gate) — scales with effort.** Acceptance criteria from the scope
@@ -205,34 +230,44 @@ must hold at every effort. Beyond that:
   follow-up); required docs (§8) updated.
 
 ### Phase 5 — Monitor  *(owner: CEO + PM)*
-- Check the delivered output against goals and acceptance criteria.
+- Check the delivered output against goals and acceptance criteria, then deliver the **final
+  report**: what was built, how to run it, test/coverage results, decisions taken during the run,
+  open findings and follow-ups. The report closes the run with **no question**: optional next
+  steps (commit, push, release) are listed, not asked about, and not performed unless the approved
+  plan included them.
 - Feed new requirements or gaps back into **Phase 1** — revise artifacts and product, don't restart.
 
 ---
 
-## 6. Human-in-the-loop decision gates
+## 6. Human-in-the-loop: ask once, approve once
 
-On consequential decisions the team must **not** silently choose for you. Instead:
-- Draft **2–3 concrete options**.
-- State **pros/cons and cost/risk** for each.
-- Ask **verification questions** where intent is ambiguous.
-- Recommend one, and let the user decide.
+The user is interrupted at exactly two points:
+1. **Kickoff** — one question batch (AskUserQuestion): clarifying questions whose answer changes
+   scope or design, the **effort** level, and the **model / reasoning roster**. Each question
+   offers concrete options with a recommended default. Don't ask what the request already answers.
+2. **Plan approval** — consequential choices are surfaced *in the plan*: 2–3 options with
+   pros/cons and cost/risk, and the recommended one. The user approves, changes staffing, or sends
+   scope/design back.
 
-For reversible, low-stakes choices, pick a sensible default, state it, and move on.
+After approval the orchestrator **runs to completion without asking**. Any choice that comes up
+is decided by the orchestrator — the persona's recommendation, or the safer, more reversible
+option closest to the approved plan — logged under *Decisions taken* in `STATE.md`, and listed in
+the final report.
 
 ---
 
-## 7. Escalation & stop-and-ask conditions
+## 7. Hard stops
 
-Stop and ask the user immediately (don't guess, don't loop) when:
-- Requirements **conflict** or scope is genuinely ambiguous.
+Before the plan gate, raise these in the plan itself. After it, stop and ask the user **only**
+when continuing would mean guessing at something that must not be guessed:
 - A dependency, credential, or access the work needs is **missing**.
-- A chosen path would **exceed the stated budget/deadline/cost limits**.
-- A **security blocker has no clean fix** without a scope or design change.
-- The **Dev↔Review loop hits its 3-round bound** with blockers still open.
-- Any action is **hard to reverse** (data loss, public release, irreversible migration).
+- An action is **hard to reverse** and wasn't explicitly in the approved plan (data loss,
+  destructive migration, public release, spending money, pushing to shared branches).
+- A **security blocker has no clean fix** without changing the approved scope or design.
 
-Escalations surface the blocker, the options, and a recommendation — concise, decision-ready.
+Everything else — conflicting findings, an exhausted Dev↔Review loop, a budget/deadline squeeze,
+an ambiguous detail — is resolved with the most conservative option and reported at the end.
+Hard stops surface the blocker, the options, and a recommendation — concise, decision-ready.
 
 ---
 
@@ -242,9 +277,9 @@ Store lifecycle artifacts under a dedicated, versioned directory so history is a
 
 ```
 docs/squad/
-├── STATE.md                              # current phase, active versions, open decisions
+├── STATE.md                              # effort, model roster, kickoff answers, current phase, active versions, decisions taken
 ├── analyze-v1.md, analyze-v2.md ...      # scope & requirements
-├── plan-v1.md, plan-v2.md ...            # architecture & tech stack
+├── plan-v1.md, plan-v2.md ...            # the approved plan: FR/NFR, success, architecture, stack, work plan
 ├── dev-v1.md, dev-v2.md ...              # implementation notes
 ├── review-v1.md ...                      # quality review outcomes + findings
 ├── security-v1.md ...                    # security review outcomes + findings
@@ -333,7 +368,9 @@ maps to a test.
 - Never overwrite prior artifact versions; always bump the version and update `STATE.md`.
 - No secrets in code or logs; validate all external input; least privilege for any IAM/roles.
 
-**Kickoff:** The user provides product context and requirements. The Product Manager (with CEO
-direction) **opens with clarifying questions — never starts on assumptions** — then the lifecycle
-begins at **Phase 1 — Analyze**. User review is requested once the plan (Phase 2) is ready and
-again before "go live".
+**Kickoff:** The user provides product context and requirements. The orchestrator **asks
+everything in one question batch** — clarifying questions, the effort level, and the model /
+reasoning roster — then the lifecycle begins at **Phase 1 — Analyze** and runs through Plan
+without further questions. No code is written until the user approves the plan (Phase 2); after
+approval the team runs Dev → Review → Monitor to completion without asking again (barring a hard
+stop, §7) and closes with the final report.
