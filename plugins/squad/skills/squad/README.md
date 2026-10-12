@@ -21,7 +21,7 @@ defaults to **medium** and tells you which it's running.
 
 | Effort | What ships | Process weight |
 |---|---|---|
-| **low** | Working code that meets the requirements — no tests, no extras. | Plan → Dev only, inline sanity check, `README.md` only. Fast; good for spikes, interviews, throwaways. |
+| **low** | Working code that meets the requirements — no tests, no extras. | Short plan → approval → Dev, inline sanity check, `README.md` only. Fast; good for spikes, interviews, throwaways. |
 | **medium** *(default)* | Code + tests for the major functionality; minimal extras. | Lean Analyze/Plan → Dev → one Reviewer pass. `README.md` + `SPEC.md`. |
 | **high** | Everything — ≥90% coverage on critical logic, edge cases, ADRs, full docs. | All six personas, Reviewer + SecOps in parallel, up to 3 review rounds. |
 
@@ -67,12 +67,37 @@ so that one component owns *control flow* and the others own *domain thinking* �
   Reviewer/SecOps can read and run tests/scanners but **cannot edit source** (they report findings
   back). This keeps roles honest and prevents a review agent from silently "fixing" what it should
   be flagging.
-- **Reasoning where the leverage is.** The strongest model sits on **Product Manager (Analyze)**
-  and **Architect (Plan)** — scope and architecture are the costliest things to get wrong.
-  Execution and review roles run a capable coding model.
+- **Reasoning where the leverage is.** Each persona runs on its own model and reasoning effort,
+  whatever model the session was started with (see [Model roster](#model-roster)). The strongest
+  model sits on **Product Manager (Analyze)** and **Architect (Plan)** — scope and architecture are
+  the costliest things to get wrong. Execution and review roles run a capable coding model.
 - **Parallelism where it is safe.** Independent personas run concurrently. In Review, `squad-reviewer`
   and `squad-secops` are invoked in the same turn (two Agent calls, one message); phases with a real
   dependency stay sequential.
+
+### Model roster
+
+| Persona | Model | Reasoning |
+|---|---|---|
+| CEO | `sonnet` | `medium` |
+| Product Manager | `opus` | `high` |
+| Architect | `opus` | `high` |
+| Developer | `sonnet` | `medium` |
+| Reviewer | `sonnet` | `high` |
+| SecOps | `sonnet` | `high` |
+
+These are the personas' frontmatter defaults. At kickoff the orchestrator shows the roster and asks
+you to confirm it (use defaults / everyone on the session model / customise), stores it in
+`STATE.md`, and passes `model` + `effort` explicitly on every Agent call, so a CEO on `sonnet` is
+followed by an Architect on `opus` no matter which model you started the session with. You can
+change any row at kickoff or at the plan gate.
+
+*Reasoning* (`low`…`max`) is how hard one model thinks; it is separate from the run's **effort**
+(low/medium/high), which scales what gets built.
+
+Caveats: the orchestrator itself runs on your session model (it suggests `/model opus` if you're on
+something else); and `CLAUDE_CODE_SUBAGENT_MODEL_FORCE=1` or an `availableModels` allowlist will
+override the roster.
 
 ### The handoff contract
 
@@ -98,9 +123,9 @@ All lifecycle artifacts live under `docs/squad/`:
 
 ```
 docs/squad/
-├── STATE.md            # current phase, active artifact versions, open decisions — the resume point
+├── STATE.md            # effort, model roster, current phase, artifact versions, open decisions — the resume point
 ├── analyze-vN.md       # scope, acceptance criteria, success metrics
-├── plan-vN.md          # architecture & tech stack (2–3 options with trade-offs)
+├── plan-vN.md          # the plan you approve: goal, FR/NFR, definition of success, architecture, stack, work plan
 ├── dev-vN.md           # implementation notes
 ├── review-vN.md        # quality review outcomes + findings
 ├── security-vN.md      # security review outcomes + findings
@@ -113,7 +138,8 @@ from it instead of restarting.
 
 ## How it works (the lifecycle)
 
-The orchestrator opens with clarifying questions, picks an effort level, then runs the loop. Each
+The orchestrator opens with clarifying questions, picks an effort level, confirms the model roster
+with you, then runs the loop. Each
 phase invokes its owner persona, collects the handoff, updates `STATE.md`, and clears a gate.
 
 ![The lifecycle — Analyze → Plan → Dev → Review → Monitor, a loop not a line, with findings looping back to Dev and new requirements back to Analyze](./images/squad-lifecycle.png)
@@ -125,8 +151,16 @@ phase invokes its owner persona, collects the handoff, updates `STATE.md`, and c
    success metrics → `analyze-vN.md`. **Gate:** user confirms scope.
 3. **Plan** (`squad-architect`, with Developer/PM input). Tech stack + architecture, 2–3 options with
    pros/cons/cost, ADRs → `plan-vN.md` + `docs/adr/*`. On security/data-sensitive designs it
-   **shifts left**, consulting SecOps (threat model) and Reviewer (testability) here. **Gate:** user
-   approves the plan.
+   **shifts left**, consulting SecOps (threat model) and Reviewer (testability) here.
+   **Gate (every effort, before any code):** you approve `plan-vN.md` — a short document covering
+   the goal, functional and non-functional requirements, definition of success, architecture, tech
+   stack and why, test & verification strategy, risks, and a **work plan** table:
+
+   | # | Work item | Persona | Model | Reasoning | Output | How it's verified |
+   |---|---|---|---|---|---|---|
+
+   Approve it, change who does what (persona, model, reasoning), or send scope/design back. Every
+   change writes a new plan version.
 4. **Dev** (`squad-developer`). Implement to the approved plan; tests per effort (≥90% on critical
    logic at high); durable `README.md`/`SPEC.md` + `dev-vN.md`. **Gate:** build + tests pass locally.
 5. **Review** (`squad-reviewer` + `squad-secops`, in parallel). Findings tagged by severity go back to

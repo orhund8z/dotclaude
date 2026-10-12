@@ -58,7 +58,8 @@ name: squad-architect
 description: Action-oriented — when to invoke this persona and what it produces, so the
   orchestrator (or the user) routes to it from natural language.
 tools: Read, Grep, Glob, Write, WebSearch   # least privilege per role (see below)
-model: inherit   # heavier reasoning for architect/reviewer; lighter is fine for mechanical roles
+model: opus      # per-persona default from the roster below
+effort: high     # per-persona reasoning default
 ---
 ```
 
@@ -71,8 +72,15 @@ model: inherit   # heavier reasoning for architect/reviewer; lighter is fine for
 
 **Model guidance:** put the strongest reasoning model where the leverage is — **Product Manager
 (Analyze)** and **Architect (Plan)**, since scope and architecture are the costliest things to get
-wrong. Execution and review roles use a capable coding model. Current mapping: PM / Architect →
-`opus`; CEO / Developer / Reviewer / SecOps → `sonnet`.
+wrong. Execution and review roles use a capable coding model. Default roster (model / reasoning):
+PM and Architect → `opus` / `high`; CEO → `sonnet` / `medium`; Developer → `sonnet` / `medium`;
+Reviewer and SecOps → `sonnet` / `high`.
+
+The roster applies **regardless of the session's model**. The orchestrator confirms it with the
+user at kickoff (defaults / everyone on the session model / customise), stores it in `STATE.md`,
+and passes `model` and `effort` explicitly on every Agent call — explicit values beat frontmatter,
+so a user override sticks. The orchestrator itself runs on the session model and recommends
+`/model opus` when it isn't. A persona's *reasoning* is distinct from the run's *effort* (§5).
 
 ### 2.3 Orchestrator skill definition
 
@@ -159,7 +167,7 @@ stating which it's running. The user can change it at any time.
 
 | Effort | What ships | Process |
 |---|---|---|
-| **low** | Working code that meets the requirements. **No tests, no extras.** | Skip CEO. Analyze + Plan collapse into a brief inline scope + approach note (no options matrix, no ADRs). Developer implements. **No Reviewer/SecOps pass** — the orchestrator does a quick inline sanity check. Docs: a short `README.md` only. |
+| **low** | Working code that meets the requirements. **No tests, no extras.** | Skip CEO. Analyze + Plan collapse into a short `plan-v1.md` the orchestrator writes itself (same sections as the plan gate, a line or two each; no options matrix, no ADRs), approved before coding. Developer implements. **No Reviewer/SecOps pass** — the orchestrator does a quick inline sanity check. Docs: a short `README.md` only. |
 | **medium** *(default)* | Working code **+ tests for the major/critical functionality only.** Minimal extras. | PM (lean Analyze) → Architect (light Plan: one recommended option, ADR only for a genuine fork) → Developer → **one Reviewer pass** (add SecOps only if security/data-sensitive). One Dev↔Review round. Docs: `README.md` + a concise `SPEC.md`. |
 | **high** | **Full, detailed implementation with everything** — tests to ≥90% on critical logic + edge cases, ADRs, complete docs. | All six personas, full versioned artifacts, Reviewer + SecOps in parallel, up to 3 Dev↔Review rounds. |
 
@@ -179,7 +187,13 @@ role on small projects. **Pass the chosen effort into every persona invocation.*
 - **Shift-left:** on security- or data-sensitive designs, consult **SecOps** (lightweight threat
   model) and **Reviewer** (testability) here — not only at the Phase 4 gate.
 - Record non-trivial choices as ADRs.
-- **Output:** `plan-vN.md` + `docs/adr/*`. **Gate:** user approves the plan.
+- **Output:** `plan-vN.md` + `docs/adr/*`. **Gate:** user approves the plan — at **every** effort,
+  before any code. `plan-vN.md` is short and self-contained: goal; functional and non-functional
+  requirements; definition of success; architecture; tech stack and why; a **work plan** with one
+  row per item (persona, model, reasoning, output, how it's verified), defaulting to the roster;
+  test & verification strategy; risks. The user can approve, change who does what (persona, model,
+  reasoning — no Architect re-run needed), or send scope/design back. Each change writes a new
+  version; Dev and Review use the approved rows' `model`/`effort`.
 
 ### Phase 3 — Dev  *(owner: Developer)*
 - Implement to the approved plan. Clean code, wise naming, comments where they earn their place.
@@ -242,9 +256,9 @@ Store lifecycle artifacts under a dedicated, versioned directory so history is a
 
 ```
 docs/squad/
-├── STATE.md                              # current phase, active versions, open decisions
+├── STATE.md                              # effort, model roster, current phase, active versions, open decisions
 ├── analyze-v1.md, analyze-v2.md ...      # scope & requirements
-├── plan-v1.md, plan-v2.md ...            # architecture & tech stack
+├── plan-v1.md, plan-v2.md ...            # the approved plan: FR/NFR, success, architecture, stack, work plan
 ├── dev-v1.md, dev-v2.md ...              # implementation notes
 ├── review-v1.md ...                      # quality review outcomes + findings
 ├── security-v1.md ...                    # security review outcomes + findings
@@ -334,6 +348,7 @@ maps to a test.
 - No secrets in code or logs; validate all external input; least privilege for any IAM/roles.
 
 **Kickoff:** The user provides product context and requirements. The Product Manager (with CEO
-direction) **opens with clarifying questions — never starts on assumptions** — then the lifecycle
-begins at **Phase 1 — Analyze**. User review is requested once the plan (Phase 2) is ready and
-again before "go live".
+direction) **opens with clarifying questions — never starts on assumptions**, the orchestrator
+confirms the effort and the model roster, then the lifecycle begins at **Phase 1 — Analyze**. No
+code is written until the user approves the plan (Phase 2); review is requested again before
+"go live".

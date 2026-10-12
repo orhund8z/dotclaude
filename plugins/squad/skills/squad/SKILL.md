@@ -22,7 +22,7 @@ interview" → low; "production-grade", "the works", "everything" → high).
 
 | Effort | What ships | Process |
 |---|---|---|
-| **low** | Working code that meets the requirements. **No tests, no extras.** | Skip CEO. Analyze + Plan collapse into a brief inline scope + approach note (no options matrix, no ADRs). Developer implements. **No Reviewer/SecOps pass** — you do a quick inline sanity check. Docs: a short `README.md` only. |
+| **low** | Working code that meets the requirements. **No tests, no extras.** | Skip CEO. Analyze + Plan collapse into a short `plan-v1.md` you write yourself (same sections as the plan gate, one or two lines each; no options matrix, no ADRs), approved by the user before coding. Developer implements. **No Reviewer/SecOps pass** — you do a quick inline sanity check. Docs: a short `README.md` only. |
 | **medium** *(default)* | Working code **+ tests for the major/critical functionality only.** Minimal extras. | PM (lean Analyze) → Architect (light Plan: one recommended option, ADR only for a genuine fork) → Developer → **one Reviewer pass** (add SecOps only if the change is security/data-sensitive). One Dev↔Review round. Docs: `README.md` + a concise `SPEC.md`. |
 | **high** | **Full, detailed implementation with everything** — tests to ≥90% on critical logic + edge cases, full observability, ADRs, complete docs. | All six personas, full versioned artifacts, Reviewer + SecOps in parallel, up to 3 Dev↔Review rounds. (This is the previous default behavior.) |
 
@@ -52,9 +52,39 @@ appears in the Agent tool's list of available agents: if the personas were insta
 `~/.claude/agents/`, they appear without the prefix, so drop it. Elsewhere in this document,
 `squad-<role>` is shorthand for the persona and is invoked with the name above.
 
+### Model & reasoning roster
+
+Each persona runs on its own model and reasoning effort, **independent of the model the session
+was started with** — the CEO can run on `sonnet` and the Architect that follows on `opus`. The
+default roster:
+
+| Persona | Model | Reasoning | Why |
+|---|---|---|---|
+| CEO | `sonnet` | `medium` | Framing and go/no-go; short output |
+| Product Manager | `opus` | `high` | Scope is the costliest thing to get wrong |
+| Architect | `opus` | `high` | Architecture is the second costliest |
+| Developer | `sonnet` | `medium` | Capable coding model; executes an approved plan |
+| Reviewer | `sonnet` | `high` | Skeptical gate; must reason through edge cases |
+| SecOps | `sonnet` | `high` | Same, through a security lens |
+
+Two different knobs — don't conflate them: the run's **effort** (low/medium/high, below) scales
+*what gets built*; a persona's **reasoning** (`low`…`max`) is how hard that one model thinks.
+
+- The roster lives in `STATE.md` and is the source of truth for the run. Defaults match the
+  personas' frontmatter; the user can change any entry at kickoff or at any gate.
+- **On every Agent call, pass `model` and `effort` explicitly from the roster** (or from the plan's
+  work-plan row for that item, once the plan is approved). Explicit values are what make a
+  user override stick — without them the frontmatter default applies.
+- The orchestrator itself runs on the session model and cannot switch it. If the session isn't on
+  `opus`, say so at kickoff and suggest `/model opus` — the gates and routing are done here.
+- If a persona call comes back on a different model than requested (an `availableModels`
+  allowlist or `CLAUDE_CODE_SUBAGENT_MODEL_FORCE` can override it), tell the user rather than
+  carrying on silently.
+
 ### How to invoke a persona (important)
 
 Subagents **start cold** — they share no memory with you or each other. In every invocation:
+- Pass `model` and `effort` from the roster (see above).
 - Give the task and the constraints (budget, deadline, stack decisions already made).
 - Pass the **paths** it must read (e.g. `docs/squad/STATE.md`, the latest `analyze-vN.md` /
   `plan-vN.md`), so it reads the source of truth instead of re-deriving it. Keep context lean.
@@ -84,8 +114,12 @@ Route on `STATUS`: `ok` → advance; `needs-user-decision` → run a decision ga
    AskUserQuestion) — never start on assumptions.
 2. **Determine the effort level** (see "Effort modes" above) and **state which you're running.**
    Default to `medium` when the request doesn't say. Recommend a bump if the work is high-risk.
-3. Create `docs/squad/` and initialise `docs/squad/STATE.md` (effort level, current phase, artifact
-   versions, open decisions). Read `STATE.md` on entry so an interrupted run can resume. At **low**
+3. **Confirm the roster before any persona runs.** Show the roster table (only the personas this
+   effort will use) and ask in the same AskUserQuestion batch: *use the default roster
+   (Recommended)* / *run everyone on the session model* / *customise*. On customise, take the
+   changes per persona. Never start a persona on an unconfirmed roster.
+4. Create `docs/squad/` and initialise `docs/squad/STATE.md` (effort level, the confirmed roster,
+   current phase, artifact versions, open decisions). Read `STATE.md` on entry so an interrupted run can resume. At **low**
    effort keep this minimal — a one-line STATE and inline notes are enough; don't manufacture a
    full artifact trail.
 
@@ -112,10 +146,22 @@ Each phase: invoke the owner persona, collect the handoff, update `STATE.md`, ru
 
 1. **Analyze** — `squad-product-manager` (direction from `squad-ceo` when the tier warrants).
    Scope, acceptance criteria, success metrics → `analyze-vN.md`. **Gate:** user confirms scope.
-2. **Plan** — `squad-architect` (with Developer/PM input). Tech stack + architecture, 2–3 options
-   with pros/cons/cost, ADRs → `plan-vN.md` + `docs/adr/*`. **Shift-left:** on security/data-
-   sensitive designs, also consult `squad-secops` (threat model) and `squad-reviewer` (testability)
-   here. **Gate:** user approves the plan.
+2. **Plan** — `squad-architect` (with Developer/PM input). Pass it the confirmed roster. Tech stack
+   + architecture, 2–3 options with pros/cons/cost, ADRs → `plan-vN.md` + `docs/adr/*`.
+   **Shift-left:** on security/data-sensitive designs, also consult `squad-secops` (threat model)
+   and `squad-reviewer` (testability) here. **Gate:** the plan approval gate below.
+
+   **Plan approval gate — mandatory at every effort; no code before it passes.** `plan-vN.md` is
+   the single document the user approves. It is short and covers, in order: goal, functional and
+   non-functional requirements, definition of success, architecture, tech stack and why, the
+   **work plan** (one row per item: persona, model, reasoning, output, how it's verified), test &
+   verification strategy, and risks. Present it with a short summary plus the work-plan table, then
+   ask: *approve* / *change who-does-what (model, reasoning, persona)* / *change scope or design*.
+   - Staffing changes: apply them, write `plan-v(N+1).md`, update the roster in `STATE.md`, and
+     show the changed rows again. No need to re-run the Architect for this.
+   - Scope or design changes: loop back to the PM or Architect, then re-present.
+   - Record the approved plan version in `STATE.md`; Dev and Review use its work-plan rows for
+     each Agent call's `model` and `effort`.
 3. **Dev** — `squad-developer`. Implement to the approved plan; tests per effort; and, once it
    works, the durable root docs: **`README.md`** (what it is, how to run, how-tos) always, plus
    **`SPEC.md`** (tech spec: architecture, components, data model, interfaces, decisions, failure
@@ -128,7 +174,7 @@ Each phase: invoke the owner persona, collect the handoff, update `STATE.md`, ru
 5. **Monitor** — verify output against goals/acceptance criteria. New requirements loop back into
    **Analyze** — revise artifacts and product, don't restart.
 
-**How effort scales the phases:** at **low**, run Plan → Dev only, with an inline sanity check in
+**How effort scales the phases:** at **low**, run Plan (your short `plan-v1.md` + approval) → Dev only, with an inline sanity check in
 place of the Review phase, and skip the CEO; at **medium**, run one Reviewer pass (add SecOps only
 when the change is security/data-sensitive) with a single Dev↔Review round; at **high**, run the
 full parallel Reviewer + SecOps loop (up to 3 rounds). Invoke the CEO below `high` only when
@@ -178,4 +224,5 @@ Surface the blocker, the options, and a recommendation — concise and decision-
 - Respond in **English** regardless of input language. Be direct; no filler.
 - Personas debate internally, then surface a clear recommendation — don't dump the raw debate.
 - No secrets in code or logs; validate all external input; least privilege for any IAM/roles.
-- Request user review once the plan (Phase 2) is ready, and again before "go live".
+- Confirm the roster at kickoff; get the plan approved before any code; request review again
+  before "go live".
