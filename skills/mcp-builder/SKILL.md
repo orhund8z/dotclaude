@@ -61,7 +61,7 @@ created.
   path with the optional key genuinely omitted, force/override, idempotent
   retry); SecOps checks secrets/env-var handling, injection via tool inputs,
   and the timeout/DoS surface on external calls. Route findings back to
-  `squad-developer` to fix; bound this to 3 rounds same as squad, then escalate
+  `squad-developer` to fix; bound this to 3 rounds, then escalate
   to the user with the open findings.
 - Steps 0–2, 4, and 6 (scaffolding, scope, wiring, OAuth) stay owned by this
   skill and run inline — they're MCP-domain judgment calls, not implementation
@@ -120,7 +120,7 @@ Borrow squad's kickoff discipline here: **ask clarifying questions in one
 focused batch up front** (via `AskUserQuestion`) rather than guessing and
 building the wrong shape, and **don't start Step 2's design until scope is
 actually confirmed** — this is the same "gate before you invest" pattern
-squad uses before Analyze → Plan.
+squad uses at its Brief gate before any code.
 
 1. **Ask, in one batch, whatever of these is not already clear from the
    request:**

@@ -23,7 +23,7 @@ read-only vs mutating, what backs it, whether the upstream API actually
 covers everything you asked for) rather than guessing and building the wrong
 shape, then **restates the resolved scope and waits for confirmation**
 before writing any code — the same "confirm scope before you build" gate the
-`squad` skill uses before Analyze → Plan.
+`squad` skill uses at its Brief gate before any code.
 
 ## Effort modes
 
@@ -106,7 +106,7 @@ questioning discipline and two of its persona subagents for the generic
 parts of the work:
 
 - **Requirements gathering** (Step 2) always asks one focused question batch
-  and confirms scope before design, same as squad's kickoff/Analyze gate; for
+  and confirms scope before design, same as squad's kickoff and Brief gate; for
   multi-server or unfamiliar-domain requests it can hand off to
   **`squad-product-manager`** instead of improvising the scope.
 - **`squad-developer`** implements the server (Step 4) — given the resolved
