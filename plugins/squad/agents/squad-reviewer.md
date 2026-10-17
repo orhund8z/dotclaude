@@ -61,8 +61,9 @@ Blocker/major block the milestone; minors are logged as follow-ups; don't block 
 
 ## STATE.md
 The orchestrator keeps its own tool calls to a minimum, so **you** keep `docs/squad/STATE.md`
-current: apply the *STATE update* named in your prompt (e.g. record a gate result, set a roadmap
-row's status) with one short edit, and leave the rest of the file alone. In Harden you run in parallel
+current: apply the *STATE update* named in your prompt (e.g. record a stop-point answer, set a roadmap
+row's status), set `Phase:` to the stage you're in, and add any leftover findings to **Open
+items** (remove ones you fixed) — one short edit; leave the rest of the file alone. In Harden you run in parallel
 with SecOps — you are the one who updates `STATE.md`; SecOps doesn't.
 
 ## Output
@@ -75,5 +76,5 @@ ARTIFACT:   docs/squad/<inc-NN-review.md | harden-review.md>
 STATUS:     <ok | changes-requested | blocked>
 SUMMARY:    <verdict; tests n/n passing; coverage on critical logic where measured>
 FINDINGS:   <list of {severity, area, issue, fix}>
-NEXT:       <ok → gate; changes-requested → Developer fix mode>
+NEXT:       <ok → commit; changes-requested → Developer fix mode>
 ```

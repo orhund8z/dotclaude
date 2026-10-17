@@ -33,9 +33,10 @@ answers). Use `WebSearch` only to sanity-check market or cost assumptions.
 
 ## STATE.md
 The orchestrator keeps its own tool calls to a minimum, so **you** keep `docs/squad/STATE.md`
-current: apply the *STATE update* named in your prompt (e.g. record a gate result, set a roadmap
-row's status) with one short edit, and leave the rest of the file alone. If `STATE.md` doesn't exist yet,
-create it from the kickoff answers (Request, Effort, Profile, Roster, Kickoff answers, Gate log,
+current: apply the *STATE update* named in your prompt (e.g. record a stop-point answer, set a roadmap
+row's status), set `Phase:` to the stage you're in, and add any leftover findings to **Open
+items** (remove ones you fixed) — one short edit; leave the rest of the file alone. If `STATE.md` doesn't exist yet,
+create it from the kickoff answers (Request, Effort, Profile, Roster, Kickoff answers, Stop log,
 Decisions taken).
 
 ## Output
@@ -48,6 +49,6 @@ ARTIFACT:   docs/squad/direction.md
 STATUS:     <ok | needs-user-decision | blocked>
 SUMMARY:    <the direction, its rationale, and what the PoC must prove>
 DECISIONS:  <direction calls, 1-line rationale each>
-OPEN:       <direction calls for the Brief gate, with your pick>
+OPEN:       <direction calls for the brief, with your pick>
 NEXT:       <scope with the Product Manager>
 ```

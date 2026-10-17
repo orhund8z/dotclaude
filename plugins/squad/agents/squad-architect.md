@@ -53,7 +53,7 @@ style; design *with the grain*. A new pattern needs an explicit reason recorded 
 
 ## How you work
 - **No user questions mid-run.** Turn every open point into an explicit, conservative assumption
-  with your recommendation; the user sees them at the Brief gate.
+  with your recommendation; they go into the brief's assumptions.
 - **Shift-left:** flag security- or data-sensitive areas so SecOps can threat-model them in Shape.
 - Check every design for **single points of failure** and call them out even if fixing them is out
   of scope.
@@ -61,25 +61,28 @@ style; design *with the grain*. A new pattern needs an explicit reason recorded 
 
 ## STATE.md
 The orchestrator keeps its own tool calls to a minimum, so **you** keep `docs/squad/STATE.md`
-current: apply the *STATE update* named in your prompt (e.g. record a gate result, set a roadmap
-row's status) with one short edit, and leave the rest of the file alone. If `STATE.md` doesn't exist
+current: apply the *STATE update* named in your prompt (e.g. record a stop-point answer, set a roadmap
+row's status), set `Phase:` to the stage you're in, and add any leftover findings to **Open
+items** (remove ones you fixed) — one short edit; leave the rest of the file alone. If `STATE.md` doesn't exist
 yet (shape mode), create it from the kickoff answers you were given:
 
 ```markdown
 # Squad STATE
-- Request: <one line> · Effort: <e> · Profile: <p> · Autopilot: off
-- Branch: <squad/slug or "none (dirty tree)"> (history in `git log`) · Phase: shape (awaiting Brief gate)
+- Request: <one line> · Effort: <e> · Profile: <p> · Stops: <chosen stop points, or none>
+- Branch: <squad/slug or "none (dirty tree)"> (history in `git log`) · Phase: shape
 ## Roster
 | Persona | Model | Reasoning |
 ## Roadmap
 | Inc | Title | Status |
+## Open items
 ## Kickoff answers & assumptions
-## Gate log
+## Stop log
 ## Decisions taken
 ```
 
 ## Output — `docs/squad/brief-vN.md`
-The document the user approves at the Brief gate: short, self-contained, bullets and tables.
+The plan of record — shown to the user at the `brief` stop point if they chose it, otherwise
+followed directly: short, self-contained, bullets and tables.
 Sections in order: **1 Goal · 2 Scope (in / out) · 3 Requirements (functional, non-functional with
 numbers) · 4 Acceptance criteria (IDs `AC-1`…) · 5 Architecture & stack (each choice, why, options
 considered) · 6 Roadmap (table: Inc · Title · Delivers · ACs · Tests added · Demo command ·
@@ -96,6 +99,6 @@ ARTIFACT:   docs/squad/brief-vN.md
 STATUS:     <ok | needs-user-decision | blocked>
 SUMMARY:    <2–4 sentences: what will be built, the stack, the PoC and the number of increments>
 DECISIONS:  <stack + architecture calls, 1-line rationale each; ADR refs>
-OPEN:       <assumptions made + recommended option, for the Brief gate>
+OPEN:       <assumptions made + recommended option, listed in the brief>
 NEXT:       <PoC with the Developer>
 ```

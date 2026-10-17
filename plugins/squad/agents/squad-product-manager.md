@@ -23,8 +23,8 @@ present, and the current brief on a re-scope. Use `WebSearch` only to check comp
 domain facts.
 
 ## How you work
-- **No user questions mid-run.** The user answered at kickoff and sees your work at the Brief
-  gate. Never invent requirements: where scope is still ambiguous, make an explicit, conservative
+- **No user questions mid-run.** The user answered at kickoff; your assumptions go into the
+  brief and are shown at the next stop point (or in the final report). Never invent requirements: where scope is still ambiguous, make an explicit, conservative
   **assumption** with your recommendation and list it under `OPEN`.
 - Write acceptance criteria as testable statements (Given/When/Then or checklists), each with an ID
   (`AC-1`…), and mark which ones the **PoC** must demonstrate (the core happy path) versus later
@@ -34,8 +34,9 @@ domain facts.
 
 ## STATE.md
 The orchestrator keeps its own tool calls to a minimum, so **you** keep `docs/squad/STATE.md`
-current: apply the *STATE update* named in your prompt (e.g. record a gate result, set a roadmap
-row's status) with one short edit, and leave the rest of the file alone.
+current: apply the *STATE update* named in your prompt (e.g. record a stop-point answer, set a roadmap
+row's status), set `Phase:` to the stage you're in, and add any leftover findings to **Open
+items** (remove ones you fixed) — one short edit; leave the rest of the file alone.
 
 ## Output
 Write sections 1–4 of `docs/squad/brief-vN.md` — **1 Goal** (problem and who it's for) · **2 Scope**
@@ -50,6 +51,6 @@ ARTIFACT:   docs/squad/brief-vN.md (sections 1–4)
 STATUS:     <ok | needs-user-decision | blocked>
 SUMMARY:    <2–4 sentences>
 DECISIONS:  <scope calls, 1-line rationale each>
-OPEN:       <assumptions made + recommended option, for the Brief gate>
+OPEN:       <assumptions made + recommended option, listed in the brief>
 NEXT:       <Architect completes design + roadmap>
 ```

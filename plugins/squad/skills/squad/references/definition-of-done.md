@@ -7,13 +7,13 @@ Acceptance criteria from the approved brief must be satisfied at **every** effor
 | Milestone | Done when |
 |---|---|
 | **PoC (inc-0)** | The end-to-end happy path runs with one command; the smoke check passes; run instructions exist. No unit tests required. |
-| **Increment N** | Its acceptance criteria each map to a passing test; all earlier tests still green; Reviewer reports zero open blocker/major findings for this diff (or the 2-round bound was hit and leftovers are listed at the gate); `README.md` updated; committed. |
+| **Increment N** | Its acceptance criteria each map to a passing test; all earlier tests still green; Reviewer reports zero open blocker/major findings for this diff (or the 2-round bound was hit and leftovers are listed at the next stop or in the final report); `README.md` updated; committed. |
 | **Harden** | As below, by effort. |
 
 ## Release, by effort
 
-- **low** — The PoC/product builds and runs and meets the requirements; `README.md` present; your
-  smoke check done. No test or review gate.
+- **low** — The PoC/product builds and runs and meets the requirements; `README.md` present; the
+  Developer's smoke check passed. No test or review gate.
 - **medium** — Build passes; tests for the major/critical functionality green; Harden QA pass on
   critical paths done; **zero open blocker/major findings** (SecOps too, if it ran);
   `README.md` + concise `SPEC.md` present.

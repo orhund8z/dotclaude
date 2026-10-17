@@ -16,9 +16,43 @@ Keep it to one or two lines; link a DESIGN.md decision for anything larger.
 | 1.0.0 | Six-persona SDLC | Analyze → Plan → Dev → Review → Monitor | Many ad-hoc questions | PM/Architect opus, rest sonnet | — |
 | 1.1.0 | Ask once, then run | same | 2 (kickoff, plan) | CEO + PM + Architect opus | $3.50, 91% Opus, 12 tests |
 | 2.0.0 | Incremental delivery | Shape → PoC → Increments → Harden | kickoff + Brief + PoC + each increment | sonnet; opus only in Deep profile | $4.23 all Sonnet, 58 tests, 6 commits |
+| 2.2.0 | Run through, stop where chosen | same | kickoff + only the stop points you pick (default none); park & resume | same | $2.24 all Sonnet, 28 tests, 97% coverage — incl. park + resume in a new session |
 | 2.1.0 | Lean orchestrator | same | same | same | $2.97 all Sonnet, 46 tests, 3 commits; orchestrator calls −43% |
 
 \* Same task each time: a small Celsius ↔ Fahrenheit CLI, medium effort, headless run.
+
+## 2.2.0
+
+- **Runs straight through by default** — 2.0.0/2.1.0 stopped at every milestone (Brief, PoC, each
+  increment), which suits close supervision but not "just build it and show me the code". The
+  user now chooses at kickoff; the default is no stops, run to the final report.
+- **Stop points chosen at kickoff** (`brief`, `poc`, `each-increment`, `build-complete`, any
+  combination) — the user wanted to decide up front where to look, instead of the skill deciding
+  for them. Kickoff asks it as the fourth question of the same batch, so it costs no extra turn.
+- **`build-complete` stop** (after the last increment, before Harden) — "write the code, let me see
+  it, then decide on hardening" had no place in the flow: "approve the rest" ran Harden too.
+- **Park and resume** — at any stop the user can park; `STATE.md` records `Phase: parked at <stop>`
+  and a `squad: parked at …` commit marks the spot. "Resume the squad" (same session or days later)
+  reads `STATE.md` and returns to the same stop without re-asking the kickoff questions. Before,
+  `STATE.md` held enough to resume but nothing told the skill how, or let the user choose to pause.
+- **Stop-point answers replace gate options** — *continue · redirect · change stop points · harden
+  now · park*; "approve the rest" became "change stop points → none".
+- **Personas keep `Phase:` and *Open items* in `STATE.md`** — found in the 2.2.0 test run: `Phase:`
+  was never updated after Shape, so parking took two calls to find the line; and the open items
+  shown at the `build-complete` stop were lost on resume ("no open items logged"). Personas now set
+  `Phase:` and maintain an *Open items* section; the park command is a single fixed `sed` + commit.
+- **One check call allowed on resume** — a resumed session has no handoff in context, so one
+  call to run the demo command and tests is within budget.
+- **Docs** — README, lifecycle diagram (optional ⏸ stops and a Parked node), hero/persona images,
+  STATE template (`Stops:`), evals (case 01 checks the stop-point question; case 02 now chooses the
+  `brief` stop explicitly, since the default no longer stops there).
+
+**Tested** (same task, medium/Balanced, sonnet session, stop point `build-complete` only): kickoff →
+Shape → PoC → inc-1 → inc-2 ran without stopping and paused before Harden ($0.75, 3 milestone
+commits) → **park** → **"resume the squad" in a new session** re-presented the same stop without
+the kickoff questions → continue → Harden → final report, `Phase: done`. Total $2.24, 28 tests,
+97% coverage. Evals: 01 — 1.0 on 3 runs (its clarification check now accepts stated assumptions,
+which is how the skill is told to handle them); 02 — 1.0.
 
 ## 2.1.0
 

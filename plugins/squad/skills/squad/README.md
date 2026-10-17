@@ -8,57 +8,72 @@ six persona **subagents** it delegates to.
 
 ## What it does
 
-You describe what you want built. Squad asks **one batch of questions** up front (clarifications,
-effort, model profile), then:
+You describe what you want built. Squad asks **one batch of questions** up front — clarifications,
+effort, model profile, and **where (if anywhere) it should stop and wait for you** — then runs:
 
-1. **Shape** — writes a short brief: scope, architecture, and a **roadmap** that starts with a
-   proof of concept and continues in small increments. *You approve it.*
-2. **PoC** — builds the thinnest version that runs **end to end through every layer**, so you can
-   try the whole flow and steer before anything is built out. *You give feedback or approve.*
-3. **Increments** — builds the rest layer by layer. Each increment is tested, reviewed (only its
-   own diff), committed locally, and shown to you with a demo command. *You approve, redirect,
-   or say "approve the rest" to let it finish on its own.*
-4. **Harden** — full QA (edge cases, end-to-end tests, coverage), a security review, and final docs.
+1. **Shape** — a short brief: scope, architecture, and a **roadmap** that starts with a proof of
+   concept and continues in small increments.
+2. **PoC** — the thinnest version that runs **end to end through every layer**.
+3. **Increments** — the rest, layer by layer: each tested, reviewed (only its own diff), and
+   committed locally.
+4. **Harden** — full QA (edge cases, end-to-end tests, coverage), a security review, final docs.
 5. **Final report** — what was built, how to run it, results, decisions taken. No closing question.
 
-Between those gates it never stops to ask — it decides, logs the decision, and shows it to you at
-the next gate. It interrupts only for a hard stop (missing credentials, an irreversible action the
-brief didn't cover, a security blocker with no in-scope fix).
+**By default it runs straight through** to the final report. If you want to look before it goes
+on, pick **stop points** at kickoff:
+
+| Stop point | It pauses… | Use it when you want to… |
+|---|---|---|
+| `brief` | after Shape, before any code | check the plan first |
+| `poc` | after the PoC is committed | try the whole flow before it's built out |
+| `each-increment` | after every increment | follow the build step by step |
+| `build-complete` | after the last increment, before Harden | just see the code, then decide on hardening |
+
+At a stop you can **continue**, **redirect** (feedback), **change the stop points** (e.g. "no more
+stops"), **harden now**, or **park**. A parked run keeps everything on its `squad/<slug>` branch
+and in `docs/squad/STATE.md`; say **"resume the squad"** — in the same session or days later —
+and it picks up at the same stop without asking the kickoff questions again.
+
+Between stops it never asks — it decides, logs the decision, and reports it at the next stop or in
+the final report. It interrupts only for a hard stop (missing credentials, an irreversible action
+the brief didn't cover, a security blocker with no in-scope fix).
 
 ```mermaid
 %%{init: {'theme': 'base', 'themeVariables': {'fontFamily': 'Inter, Segoe UI, Helvetica, Arial, sans-serif', 'fontSize': '15px', 'primaryColor': '#ffffff', 'primaryBorderColor': '#9ca3af', 'primaryTextColor': '#1f2330', 'lineColor': '#6b7280', 'edgeLabelBackground': '#ffffff'}}}%%
 flowchart TD
-    K([Kickoff<br/>one question batch:<br/>clarifications · effort · models]):::io
+    K([Kickoff<br/>one question batch:<br/>clarifications · effort · models · stop points]):::io
     S[Shape<br/>brief + roadmap<br/>PoC first, then increments]:::shape
-    G1{{Brief gate<br/>you approve the plan}}:::gate
+    SB{{⏸ stop: brief<br/>optional}}:::stop
     P[PoC<br/>thin end-to-end slice<br/>+ one smoke check]:::build
-    G2{{PoC gate<br/>you try the whole flow}}:::gate
+    SP{{⏸ stop: poc<br/>optional}}:::stop
     I[Increment N<br/>code + tests with it<br/>diff review + local commit]:::build
-    G3{{Increment gate<br/>you see the demo}}:::gate
+    SI{{⏸ stop: each-increment<br/>optional}}:::stop
+    SC{{⏸ stop: build-complete<br/>optional · before Harden}}:::stop
     H[Harden<br/>full QA · security · docs]:::review
     R([Final report<br/>no closing question]):::io
+    PK([Parked<br/>state + branch kept<br/>'resume the squad' returns here]):::parked
 
-    K --> S --> G1
-    G1 -- approve --> P --> G2
-    G1 -. change scope or staffing .-> S
-    G2 -- approve --> I --> G3
-    G2 -. feedback: redo PoC / reshape roadmap .-> S
-    G3 -- approve: next increment --> I
-    G3 -. redirect: fix-up round .-> I
-    G3 -- "last increment, stop here,<br/>or approve the rest (autopilot)" --> H --> R
+    K --> S --> SB --> P --> SP --> I --> SI
+    SI -- next increment --> I
+    SI -- last increment --> SC --> H --> R
+    SB & SP & SI & SC -. park .-> PK
+    SP -. redirect: reshape roadmap .-> S
+    SI -. redirect: fix-up round .-> I
     classDef io fill:#f3f4f6,stroke:#6b7280,color:#1f2330
     classDef shape fill:#e6f7f4,stroke:#14b8a6,stroke-width:2px,color:#134e4a
     classDef build fill:#fdf0d5,stroke:#f59e0b,stroke-width:2px,color:#78350f
     classDef review fill:#ecebfd,stroke:#4f46e5,stroke-width:2px,color:#312e81
-    classDef gate fill:#ffffff,stroke:#1f2330,stroke-width:2px,color:#1f2330,font-weight:bold
-    classDef store fill:#f8f6f1,stroke:#9ca3af,color:#374151
+    classDef stop fill:#ffffff,stroke:#1f2330,stroke-width:2px,stroke-dasharray:5 4,color:#1f2330
+    classDef parked fill:#f8f6f1,stroke:#9ca3af,stroke-dasharray:3 3,color:#374151
 ```
+
+With no stop points chosen, each ⏸ is passed straight through.
 
 ## Effort and model profiles
 
 **Effort** decides how much gets built and how heavy the process is. Each effort comes with a
-default **model profile**; you can pick another, or override single personas, at kickoff or at the
-Brief gate.
+default **model profile**; you can pick another, or override single personas, at kickoff or at any
+stop point.
 
 | Effort | Shape | PoC | Increments | Harden | Default profile |
 |---|---|---|---|---|---|
@@ -101,7 +116,7 @@ A **single orchestrator plus six cold-start subagents**, sharing state through f
 %%{init: {'theme': 'base', 'themeVariables': {'fontFamily': 'Inter, Segoe UI, Helvetica, Arial, sans-serif', 'fontSize': '15px', 'primaryColor': '#ffffff', 'primaryBorderColor': '#9ca3af', 'primaryTextColor': '#1f2330', 'lineColor': '#6b7280', 'edgeLabelBackground': '#ffffff'}}}%%
 flowchart TB
     U([You]):::io
-    O["<b>Orchestrator</b><br/>squad skill · runs on your session model<br/>gates · decisions · commits"]:::gate
+    O["<b>Orchestrator</b><br/>squad skill · runs on your session model<br/>stop points · decisions · commits"]:::gate
 
     subgraph shapeTeam [Shape — writes docs, no code]
         direction LR
@@ -122,7 +137,7 @@ flowchart TB
     C[("project source<br/>code + tests")]:::store
     G[("git branch squad/‹slug›<br/>one commit per milestone")]:::store
 
-    U <-- "kickoff + gates" --> O
+    U <-- "kickoff + chosen stop points" --> O
     O -- "Agent tool: mode + paths<br/>+ explicit model / effort" --> shapeTeam
     O --> buildTeam
     O --> reviewTeam
@@ -142,8 +157,8 @@ flowchart TB
     style reviewTeam fill:#f8f8ff,stroke:#4f46e5,stroke-dasharray:4 3,color:#312e81
 ```
 
-- **Orchestrator (the skill)** sequences the lifecycle, asks the kickoff questions, runs the gates,
-  makes and logs every decision between gates, commits each approved milestone, and handles hard
+- **Orchestrator (the skill)** sequences the lifecycle, asks the kickoff questions, pauses at the
+  chosen stop points, makes and logs every decision in between, commits each milestone, and handles hard
   stops. It reads persona **handoff blocks**, not their full artifacts, to keep its context small.
 - **Personas (the subagents)** start cold with no shared memory. The orchestrator passes a **mode**
   (`shape`, `poc`, `increment`, `fix`, `harden`), the effort, explicit `model`/`effort`, and
@@ -185,8 +200,10 @@ sequenceDiagram
         end
     end
     Note over O: git commit "squad: inc-N — title"<br/>(includes the STATE update)
-    O->>U: gate: see it with the command, decisions taken, what's next
-    U-->>O: approve · redirect · approve the rest · stop and harden
+    opt each-increment is a chosen stop point
+        O->>U: stop: see it with the command, decisions taken, what's next
+        U-->>O: continue · redirect · change stops · harden now · park
+    end
 ```
 
 ### The handoff contract
@@ -206,9 +223,9 @@ NEXT:       <recommended next action>
 
 ```
 docs/squad/
-├── STATE.md            # effort, roster, roadmap status, gate log, decisions — the resume point
+├── STATE.md            # effort, roster, roadmap status, stop points, stop log, decisions — the resume point
 ├── direction.md        # CEO go/no-go (high only)
-├── brief-v1.md         # scope + design + roadmap — approved at the Brief gate
+├── brief-v1.md         # scope + design + roadmap — the plan of record (shown at the `brief` stop, if chosen)
 ├── threat-model.md     # SecOps, sensitive designs only
 ├── inc-00.md           # PoC notes + how to run it
 ├── inc-01.md           # increment notes + demo command   (fix rounds append a section)
@@ -220,7 +237,7 @@ docs/squad/
 
 Durable project docs live at the project root: `README.md` always, `SPEC.md` at medium and high.
 If the project is a git repo with a clean tree, Squad works on a local `squad/<slug>` branch with
-**one commit per approved milestone** — a rollback point at every gate. It never pushes.
+**one commit per milestone** — a rollback point at every step. It never pushes.
 Templates and the Definition of Done are in [`references/`](./references/).
 
 ## Personas

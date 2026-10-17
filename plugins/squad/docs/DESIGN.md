@@ -30,7 +30,7 @@ demoable, ordered risk-first, and each ends at a gate.
 **Why.** Standard practice in iterative delivery (walking skeleton, vertical slices, short feedback
 loops): the cost of a change grows with how much is built on top of the wrong assumption.
 
-### D2 — Gates at milestones, no questions between them (2.0.0, refines 1.1.0)
+### D2 — Gates at milestones, no questions between them (2.0.0, refines 1.1.0; superseded by D10)
 
 **Decision.** The user is asked only at kickoff (one batch) and at gates (Brief, PoC, each
 increment). Between gates the orchestrator decides, logs the decision, and reports it at the next
@@ -137,6 +137,20 @@ reads; the orchestrator never re-runs a check a persona already ran.
 
 **Result.** Orchestrator calls 30 → 17, tokens re-read 2.52M → 1.18M, total cost $3.62 → $2.97
 on the same task (one fewer increment this time, so the per-call figures are the fair measure).
+
+### D10 — Run through by default; the user picks the stop points (2.2.0, refines D2)
+
+**Problem.** D2 put a gate at every milestone. That gives control, but every gate is a turn the
+user must take and a re-read of the orchestrator's growing context, and it didn't fit "just build
+it and show me the code". Pausing also had no defined way back in.
+
+**Decision.** One kickoff question picks the stop points (`brief`, `poc`, `each-increment`,
+`build-complete`); default none. Everything else runs through. Any stop can **park** the run
+(`Phase: parked at …` + a commit), and "resume the squad" returns to the same stop from
+`STATE.md`, in the same session or a new one.
+
+**Why.** The user decides the trade-off between supervision and speed per run, once. Stops cost
+nothing when not chosen, and parking turns `STATE.md` from a log into an actual resume point.
 
 ## Review scorecard (2.0.0 review)
 

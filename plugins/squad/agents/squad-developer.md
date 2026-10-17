@@ -60,8 +60,9 @@ major/critical functionality (happy paths + the edge cases that would actually b
 
 ## STATE.md
 The orchestrator keeps its own tool calls to a minimum, so **you** keep `docs/squad/STATE.md`
-current: apply the *STATE update* named in your prompt (e.g. record a gate result, set a roadmap
-row's status) with one short edit, and leave the rest of the file alone.
+current: apply the *STATE update* named in your prompt (e.g. record a stop-point answer, set a roadmap
+row's status), set `Phase:` to the stage you're in, and add any leftover findings to **Open
+items** (remove ones you fixed) — one short edit; leave the rest of the file alone.
 
 ## Output
 Code (+ tests per mode) and `docs/squad/inc-NN.md` (append a `## Round N` section in fix mode):
@@ -75,5 +76,5 @@ STATUS:     <ok | blocked | needs-user-decision>
 SUMMARY:    <what was built; how to see it: `command` → expected output; tests: n passing>
 DECISIONS:  <implementation calls, 1-line rationale each>
 OPEN:       <anything the orchestrator must decide; include your recommendation>
-NEXT:       <increment review | PoC gate | Harden review>
+NEXT:       <increment review | commit | Harden review>
 ```
