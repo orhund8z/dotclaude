@@ -1,208 +1,369 @@
 # Squad Skill
 
-Runs a full software development lifecycle — **Analyze → Plan → Dev → Monitor** — as a small,
-opinionated software company. The skill is the **orchestrator**; the real work is done by six
-persona **subagents** it delegates to.
+Runs an **incremental** software development lifecycle — **Shape → PoC → Increments → Harden** — as
+a small, opinionated software company. The skill is the **orchestrator**; the real work is done by
+six persona **subagents** it delegates to.
 
-![Squad — a software company that happens to be six AI agents: CEO, Product Manager, Architect, Developer, Reviewer +QA, and SecOps](./images/squad-hero.png)
+![Squad — a software company that happens to be six AI agents: Shape, PoC, Increments, Harden, with an approval between each step](./images/squad-hero.png)
 
 ## What it does
 
-You give it product context and requirements. It asks **everything up front in one batch** —
-clarifying questions, the **effort** level (see below), and which **model / reasoning** each
-persona runs on — then drafts a plan for your approval. Once you approve the plan it **runs to
-completion without asking you anything else**: implementing with tests and gating the result
-through a quality + security review before "go live". Everything is documented as versioned artifacts under `docs/squad/`, and new
-requirements loop back into Analyze rather than restarting.
+You describe what you want built. Squad asks **one batch of questions** up front — clarifications,
+effort, model profile, and **where (if anywhere) it should stop and wait for you** — then runs:
 
-## Effort modes
+1. **Shape** — a short brief: scope, architecture, and a **roadmap** that starts with a proof of
+   concept and continues in small increments.
+2. **PoC** — the thinnest version that runs **end to end through every layer**.
+3. **Increments** — the rest, layer by layer: each tested, reviewed (only its own diff), and
+   committed locally.
+4. **Harden** — full QA (edge cases, end-to-end tests, coverage), a security review, final docs.
+5. **Final report** — what was built, how to run it, results, decisions taken. No closing question.
 
-One knob controls how much gets built and how heavy the process is. You pick it in the kickoff
-batch (it preselects what your request implies, otherwise recommends **medium**).
+**By default it runs straight through** to the final report. If you want to look before it goes
+on, pick **stop points** at kickoff:
 
-| Effort | What ships | Process weight |
+| Stop point | It pauses… | Use it when you want to… |
 |---|---|---|
-| **low** | Working code that meets the requirements — no tests, no extras. | Short plan → approval → Dev, inline sanity check, `README.md` only. Fast; good for spikes, interviews, throwaways. |
-| **medium** *(default)* | Code + tests for the major functionality; minimal extras. | Lean Analyze/Plan → Dev → one Reviewer pass. `README.md` + `SPEC.md`. |
-| **high** | Everything — ≥90% coverage on critical logic, edge cases, ADRs, full docs. | All six personas, Reviewer + SecOps in parallel, up to 3 review rounds. |
+| `brief` | after Shape, before any code | check the plan first |
+| `poc` | after the PoC is committed | try the whole flow before it's built out |
+| `each-increment` | after every increment | follow the build step by step |
+| `build-complete` | after the last increment, before Harden | just see the code, then decide on hardening |
 
-Say *"low effort"*, *"quick"*, or *"the works / production-grade"* in your request to preselect
-it; high-risk work (auth, payments, data loss) prompts a recommendation to bump up regardless.
+At a stop you can **continue**, **redirect** (feedback), **change the stop points** (e.g. "no more
+stops"), **harden now**, or **park**. A parked run keeps everything on its `squad/<slug>` branch
+and in `docs/squad/STATE.md`; say **"resume the squad"** — in the same session or days later —
+and it picks up at the same stop without asking the kickoff questions again.
 
-![The effort dial — low, medium (default), high — scaling the depth of tests, docs, and review](./images/squad-effort.png)
+Between stops it never asks — it decides, logs the decision, and reports it at the next stop or in
+the final report. It interrupts only for a hard stop (missing credentials, an irreversible action
+the brief didn't cover, a security blocker with no in-scope fix).
 
-Separately from the internal `docs/squad/` trail, once the code works the Developer writes durable
-docs at the project root: a **`README.md`** (what it is, how to run, how-tos) always, plus a
-**`SPEC.md`** (architecture, components, data model, interfaces, decisions, failure modes) at
-medium and high.
+```mermaid
+%%{init: {'theme': 'base', 'themeVariables': {'fontFamily': 'Inter, Segoe UI, Helvetica, Arial, sans-serif', 'fontSize': '15px', 'primaryColor': '#ffffff', 'primaryBorderColor': '#9ca3af', 'primaryTextColor': '#1f2330', 'lineColor': '#6b7280', 'edgeLabelBackground': '#ffffff'}}}%%
+flowchart TD
+    K([Kickoff<br/>one question batch:<br/>clarifications · effort · models · stop points]):::io
+    S[Shape<br/>brief + roadmap<br/>PoC first, then increments]:::shape
+    SB{{⏸ stop: brief<br/>optional}}:::stop
+    P[PoC<br/>thin end-to-end slice<br/>+ one smoke check]:::build
+    SP{{⏸ stop: poc<br/>optional}}:::stop
+    I[Increment N<br/>code + tests with it<br/>diff review + local commit]:::build
+    SI{{⏸ stop: each-increment<br/>optional}}:::stop
+    SC{{⏸ stop: build-complete<br/>optional · before Harden}}:::stop
+    H[Harden<br/>full QA · security · docs]:::review
+    R([Final report<br/>no closing question]):::io
+    PK([Parked<br/>state + branch kept<br/>'resume the squad' returns here]):::parked
 
-It is **stack-agnostic** — it builds backend, frontend, CLI, service, or library projects in any
-language (Java/Kotlin, Python, Go, TypeScript, …). The Architect picks the tech per problem. In a
-repo that already has code, the team **explores the existing patterns first** (layout, naming,
-error format, test style) and builds with the grain rather than inventing a new pattern.
+    K --> S --> SB --> P --> SP --> I --> SI
+    SI -- next increment --> I
+    SI -- last increment --> SC --> H --> R
+    SB & SP & SI & SC -. park .-> PK
+    SP -. redirect: reshape roadmap .-> S
+    SI -. redirect: fix-up round .-> I
+    classDef io fill:#f3f4f6,stroke:#6b7280,color:#1f2330
+    classDef shape fill:#e6f7f4,stroke:#14b8a6,stroke-width:2px,color:#134e4a
+    classDef build fill:#fdf0d5,stroke:#f59e0b,stroke-width:2px,color:#78350f
+    classDef review fill:#ecebfd,stroke:#4f46e5,stroke-width:2px,color:#312e81
+    classDef stop fill:#ffffff,stroke:#1f2330,stroke-width:2px,stroke-dasharray:5 4,color:#1f2330
+    classDef parked fill:#f8f6f1,stroke:#9ca3af,stroke-dasharray:3 3,color:#374151
+```
+
+With no stop points chosen, each ⏸ is passed straight through.
+
+## How to use — every option
+
+There is **no config file**. Everything is chosen in the conversation: at kickoff (one question
+batch, each with a recommended default), in the wording of your request, or at a stop point. Say
+it in your request and kickoff won't ask it again.
+
+### What you can choose
+
+| Option | Values | Default | When it's decided |
+|---|---|---|---|
+| **Effort** — how much gets built, how heavy the process is | `low` · `medium` · `high` | `medium` (`low` is recommended for tiny jobs) | Kickoff, or in the request ("low effort", "quick", "production-grade") |
+| **Team** — which personas run | `lean` (Architect plans alone) · `full` (CEO → PM → Architect, SecOps always in Harden) | The one matching the effort: low/medium → lean, high → full | Kickoff (part of the effort question), or in the request ("full team") |
+| **Model profile** — which model and reasoning each persona uses | `Fast` · `Balanced` · `Deep` · *all sonnet* · *customise* | The one matching the effort: low → Fast, medium → Balanced, high → Deep | Kickoff; can change at any stop |
+| **Per-persona override** | any persona → `sonnet` / `opus` / `haiku` + reasoning `low` … `max` | — | Kickoff ("customise") or at a stop, e.g. "Developer on opus/high" |
+| **Stop points** — where it pauses and waits for you | any of `brief` · `poc` · `each-increment` · `build-complete` | none — runs straight through | Kickoff, or in the request ("stop after the PoC"); can change at any stop |
+| **Clarifications** — scope and design questions | your answers, or "use your assumptions" | the stated assumptions | Kickoff |
+| **Session model** — the orchestrator itself | `/model sonnet` · `/model opus` | whatever your session runs | You, before or at kickoff (the skill recommends one) |
+
+What the effort levels, teams, and profiles mean in detail is in
+[Effort, team, and model profile](#effort-team-and-model-profile) below.
+
+### At a stop point you can answer
+
+| Answer | What happens |
+|---|---|
+| **continue** | Carries on to the next stop point, or to the end |
+| **redirect** + your feedback | Small change: a fix-up round. Scope/direction change: a revised roadmap (`brief-v2.md`). Then continues |
+| **change stop points** | e.g. "no more stops" (run to the end) or "also stop before Harden" |
+| **harden now** | Skips the remaining increments and goes to Harden |
+| **park** | Saves the state (`docs/squad/STATE.md` + a commit) and ends the session cleanly |
+
+### Park and resume
+
+Park at any stop, close the session, come back later — the same day or a week later — and say
+**"resume the squad"** in the same repo. It reads `docs/squad/STATE.md`, checks out the
+`squad/<slug>` branch, and shows you the stop it was parked at, without asking the kickoff
+questions again. Everything built so far is committed on that branch.
+
+### Recipes
+
+```text
+# Small and fast — brief, PoC = product, no tests or review
+Assemble the squad, low effort: a script that renames photos by EXIF date.
+
+# The default — runs straight through to a tested, reviewed result
+Assemble the squad to build a URL shortener service.
+
+# Look at the plan before any code is written
+Assemble the squad to build a URL shortener service. Stop after the brief.
+
+# Just write the code and show me — decide on hardening afterwards
+Assemble the squad to build a URL shortener service. Stop at build-complete.
+
+# Supervise every step
+Assemble the squad, medium effort, stop after the PoC and after each increment: …
+
+# The whole SDLC company (CEO, PM, Architect, SecOps) on Balanced models, medium depth
+Assemble the squad, medium effort, full team, Balanced profile: …
+
+# Medium depth, Opus for planning
+Assemble the squad, medium effort, Deep profile: …
+
+# Production-grade, strongest models where it matters
+Assemble the squad, high effort, Deep profile, stop after the brief: a payments webhook service.
+
+# Custom staffing
+… Balanced profile, but Developer on opus/high.
+
+# Pick up a parked run
+Resume the squad.
+```
+
+### Things that change behaviour without asking
+
+- **Dirty working tree at kickoff** → it doesn't commit at all and says so; milestones are tracked
+  in `STATE.md` only. Commit or stash first if you want a rollback point per milestone.
+- **High-risk work** (auth, payments, PII, data loss, irreversible migrations) → it recommends
+  `high` effort or the Deep profile, the `brief` stop, and runs SecOps regardless of effort.
+- **Hard stops** → it interrupts outside your stop points only for a missing credential/access, an
+  irreversible action the brief didn't cover, or a security blocker with no in-scope fix.
+- **Environment overrides** → `CLAUDE_CODE_SUBAGENT_MODEL_FORCE=1` or an `availableModels`
+  allowlist in your settings can override the chosen models; the skill reports it if that happens.
+- **It never pushes** — the final report lists push / PR / release as next steps for you.
+
+## Effort, team, and model profile
+
+Three independent knobs — combine them freely (e.g. `medium` effort + `full` team + `Balanced`
+profile). Effort only *preselects* its usual team and profile; change either at kickoff, in your
+request, or at any stop point.
+
+**Effort** — how much gets built and how heavy the process is:
+
+| Effort | PoC | Increments | Harden | Usual team · profile |
+|---|---|---|---|---|
+| **low** | The PoC **is** the product | Only for PoC feedback | None (smoke check) | lean · Fast |
+| **medium** *(default)* | Thin slice + smoke check | 1–3, diff-reviewed | Reviewer QA on critical paths | lean · Balanced |
+| **high** | Thin slice + smoke check | 2–5, diff-reviewed | Reviewer QA + edge-case matrix, ADRs, full docs | full · Deep |
+
+**Team** — which personas run:
+
+| Team | Shape (planning) | SecOps |
+|---|---|---|
+| **lean** | One Architect call writes scope + design + roadmap (at `low` effort the orchestrator writes a short brief itself) | Only if the work is security/data-sensitive |
+| **full** — the whole SDLC company | CEO go/no-go → Product Manager (scope, acceptance criteria) → Architect (design + roadmap) | Always reviews in Harden; threat model in Shape if sensitive |
+
+**Model profile** — model / reasoning per persona. Every profile covers every persona, so any team
+works with any profile:
+
+| Persona | Fast | Balanced *(default)* | Deep |
+|---|---|---|---|
+| CEO | `sonnet` / `low` | `sonnet` / `medium` | `opus` / `medium` |
+| Product Manager | `sonnet` / `medium` | `sonnet` / `high` | `opus` / `high` |
+| Architect | `sonnet` / `medium` | `sonnet` / `high` | `opus` / `high` |
+| Developer | `sonnet` / `low` | `sonnet` / `medium` | `sonnet` / `high` |
+| Reviewer | `sonnet` / `low` | `sonnet` / `medium` | `sonnet` / `high` |
+| SecOps | `sonnet` / `low` | `sonnet` / `medium` | `sonnet` / `high` |
+
+Two separate settings per row: the **model** (which Claude) and the **reasoning** (how hard that
+model thinks). The profiles are *not* "Fast = haiku, Balanced = sonnet, Deep = opus": Fast is
+Sonnet thinking less, Balanced is all Sonnet, and Deep puts Opus only on the planning personas —
+the code is always written and reviewed by Sonnet. `haiku` is never used by default; you can
+assign it per persona ("customise"). The aliases resolve to the current models — in our test runs
+`sonnet` → `claude-sonnet-5-5` and `opus` → `claude-opus-5-5`.
+
+**Why the levels differ within a profile:** reasoning follows how expensive a persona's mistake is.
+The **PM and Architect** write the scope, acceptance criteria, architecture and roadmap that every
+later step builds on — a mistake there spreads into every increment, test and review — so they sit
+one notch above the rest in every profile. The **CEO** writes a short go/no-go; it needs judgment
+more than long reasoning, and the PM, the Architect and the `brief` stop can still correct it, so
+it sits one notch lower. The **Developer, Reviewer and SecOps** are checked downstream (tests,
+review, Harden), so they follow the profile's base level. These are judgment-based defaults, not
+measured ones — override any persona at kickoff or a stop ("CEO on sonnet/medium").
+
+**Why sonnet by default:** in a measured medium-effort run on the previous version, Opus made up
+~91% of the cost, and most of that was the orchestrator and the planning personas — the actual
+building and reviewing on sonnet cost $0.31 of $3.50. Opus is now reserved for the Deep profile,
+where scope and architecture mistakes are the most expensive. The orchestrator runs on your
+session model, so the skill suggests `/model sonnet` (Fast/Balanced) or `/model opus` (Deep) at
+kickoff.
+
+High-risk work (auth, payments, PII, data loss) gets a recommendation for `high` effort, the full
+team, or the Deep profile, and a SecOps pass regardless of effort or team.
+
+## Testing — hybrid, so you never test the wrong app
+
+| Stage | Tests |
+|---|---|
+| **PoC** | One smoke/acceptance check — no unit tests while the direction may still change |
+| **Each increment** | Unit + integration tests written **with** the increment; TDD for core domain logic |
+| **Harden** | Edge-case matrix, end-to-end flows, coverage bar (≥ 90% on critical logic at high), security review |
 
 ## Architecture
 
-The system is a **single orchestrator plus six cold-start subagents**. Responsibilities are split
-so that one component owns *control flow* and the others own *domain thinking* — they never mix.
+A **single orchestrator plus six cold-start subagents**, sharing state through files in the project.
 
-![Architecture — the squad orchestrator skill delegates via the Agent tool to six cold-start subagents (CEO, Product Manager, Architect, Developer, Reviewer +QA, SecOps), all reading and writing a shared docs/squad/ store](./images/squad-architecture.png)
+```mermaid
+%%{init: {'theme': 'base', 'themeVariables': {'fontFamily': 'Inter, Segoe UI, Helvetica, Arial, sans-serif', 'fontSize': '15px', 'primaryColor': '#ffffff', 'primaryBorderColor': '#9ca3af', 'primaryTextColor': '#1f2330', 'lineColor': '#6b7280', 'edgeLabelBackground': '#ffffff'}}}%%
+flowchart TB
+    U([You]):::io
+    O["<b>Orchestrator</b><br/>squad skill · runs on your session model<br/>stop points · decisions · commits"]:::gate
 
-### The two roles
+    subgraph shapeTeam [Shape — writes docs, no code]
+        direction LR
+        CEO["CEO<br/>go / no-go<br/>(high effort only)"]:::shape
+        PM["Product Manager<br/>scope · acceptance criteria<br/>(high effort)"]:::shape
+        AR["Architect<br/>design + PoC/increment roadmap"]:::shape
+    end
+    subgraph buildTeam [Build — the only code editor]
+        DEV["Developer<br/>PoC · increments · fixes · docs"]:::build
+    end
+    subgraph reviewTeam [Review — reports only, no source edits]
+        direction LR
+        REV["Reviewer + QA<br/>diff review per increment<br/>full QA in Harden"]:::review
+        SEC["SecOps<br/>threat model · Harden review"]:::review
+    end
 
-- **Orchestrator (the skill).** Runs on the main thread. It does **not** do deep design or write
-  production code. It sequences the phases, invokes the right persona at the right time, asks the
-  kickoff questions, runs the plan approval gate, makes (and logs) every decision after it, bumps
-  artifact versions, updates `STATE.md`, and handles hard stops.
-- **Personas (the subagents).** Each is a specialist invoked via the **Agent tool**. It does the
-  domain work for its phase, writes its own artifact, and returns a compact structured handoff.
+    D[("docs/squad/<br/>STATE · brief · inc-NN · reviews")]:::store
+    C[("project source<br/>code + tests")]:::store
+    G[("git branch squad/‹slug›<br/>one commit per milestone")]:::store
 
-### Why it is built this way
+    U <-- "kickoff + chosen stop points" --> O
+    O -- "Agent tool: mode + paths<br/>+ explicit model / effort" --> shapeTeam
+    O --> buildTeam
+    O --> reviewTeam
+    shapeTeam -- briefs --> D
+    reviewTeam -- reports --> D
+    DEV -- "code + tests" --> C
+    DEV -- notes --> D
+    O -- "reads short handoffs + STATE,<br/>commits each approved milestone" --> G
+    classDef io fill:#f3f4f6,stroke:#6b7280,color:#1f2330
+    classDef shape fill:#e6f7f4,stroke:#14b8a6,stroke-width:2px,color:#134e4a
+    classDef build fill:#fdf0d5,stroke:#f59e0b,stroke-width:2px,color:#78350f
+    classDef review fill:#ecebfd,stroke:#4f46e5,stroke-width:2px,color:#312e81
+    classDef gate fill:#ffffff,stroke:#1f2330,stroke-width:2px,color:#1f2330,font-weight:bold
+    classDef store fill:#f8f6f1,stroke:#9ca3af,color:#374151
+    style shapeTeam fill:#f7fdfc,stroke:#14b8a6,stroke-dasharray:4 3,color:#134e4a
+    style buildTeam fill:#fffbf2,stroke:#f59e0b,stroke-dasharray:4 3,color:#78350f
+    style reviewTeam fill:#f8f8ff,stroke:#4f46e5,stroke-dasharray:4 3,color:#312e81
+```
 
-- **Cold-start isolation.** Subagents share no memory with the orchestrator or with each other.
-  That is deliberate: each persona reasons from a clean, focused context instead of inheriting the
-  whole conversation. The orchestrator compensates by passing inputs **by artifact path** (e.g.
-  *"read `docs/squad/plan-v2.md` and `docs/squad/STATE.md`"*) so every persona reads the source of
-  truth rather than re-deriving it. Context stays lean and pointer-based.
-- **Least-privilege tooling.** Each persona gets only the tools its role needs — CEO/PM/Architect
-  write docs but **cannot edit code**; the Developer is the only persona with edit + Bash;
-  Reviewer/SecOps can read and run tests/scanners but **cannot edit source** (they report findings
-  back). This keeps roles honest and prevents a review agent from silently "fixing" what it should
-  be flagging.
-- **Reasoning where the leverage is.** Each persona runs on its own model and reasoning effort,
-  whatever model the session was started with (see [Model roster](#model-roster)). The strongest
-  model sits on the **CEO (direction)**, **Product Manager (Analyze)** and **Architect (Plan)** —
-  direction, scope and architecture are the costliest things to get wrong. Execution and review
-  roles run a capable coding model.
-- **Parallelism where it is safe.** Independent personas run concurrently. In Review, `squad-reviewer`
-  and `squad-secops` are invoked in the same turn (two Agent calls, one message); phases with a real
-  dependency stay sequential.
+- **Orchestrator (the skill)** sequences the lifecycle, asks the kickoff questions, pauses at the
+  chosen stop points, makes and logs every decision in between, commits each milestone, and handles hard
+  stops. It reads persona **handoff blocks**, not their full artifacts, to keep its context small.
+- **Personas (the subagents)** start cold with no shared memory. The orchestrator passes a **mode**
+  (`shape`, `poc`, `increment`, `fix`, `harden`), the effort, explicit `model`/`effort`, and
+  **paths** to read — never pasted content. Each writes its own artifact and returns a ≤ 200-word
+  handoff.
+- **Least privilege by role.** CEO/PM/Architect write docs only. The Developer is the only persona
+  with `Edit` and the only one that changes source. Reviewer and SecOps can run tests and scanners
+  and write their reports under `docs/squad/`; they never edit source. Because any persona with
+  `Bash` *could* write files, this last rule is enforced by instructions, not by tool permissions.
 
-### Model roster
+### One increment, step by step
 
-| Persona | Model | Reasoning |
-|---|---|---|
-| CEO | `opus` | `medium` |
-| Product Manager | `opus` | `high` |
-| Architect | `opus` | `high` |
-| Developer | `sonnet` | `medium` |
-| Reviewer | `sonnet` | `high` |
-| SecOps | `sonnet` | `high` |
+```mermaid
+%%{init: {'theme': 'base', 'themeVariables': {'fontFamily': 'Inter, Segoe UI, Helvetica, Arial, sans-serif', 'fontSize': '15px', 'actorBkg': '#ffffff', 'actorBorder': '#1f2330', 'actorTextColor': '#1f2330', 'signalColor': '#4b5563', 'signalTextColor': '#1f2330', 'noteBkgColor': '#f8f6f1', 'noteBorderColor': '#9ca3af', 'labelBoxBkgColor': '#ffffff', 'labelBoxBorderColor': '#9ca3af', 'activationBkgColor': '#e5e7eb'}}}%%
+sequenceDiagram
+    autonumber
+    box rgb(243,244,246) Main thread
+        participant O as Orchestrator
+    end
+    box rgb(253,240,213) Build
+        participant D as Developer
+    end
+    box rgb(236,235,253) Review
+        participant R as Reviewer
+    end
+    participant U as You
 
-These are the personas' frontmatter defaults. The kickoff batch shows the roster and asks you to
-confirm it (use defaults / everyone on the session model / everyone on `opus` / customise), stores
-it in `STATE.md`, and passes `model` + `effort` explicitly on every Agent call, so an Architect on
-`opus` is followed by a Developer on `sonnet` no matter which model you started the session with.
-You can change any row at kickoff or at the plan gate — not after.
-
-*Reasoning* (`low`…`max`) is how hard one model thinks; it is separate from the run's **effort**
-(low/medium/high), which scales what gets built.
-
-Caveats: the orchestrator itself runs on your session model (it suggests `/model opus` if you're on
-something else); and `CLAUDE_CODE_SUBAGENT_MODEL_FORCE=1` or an `availableModels` allowlist will
-override the roster.
+    O->>D: increment mode · inc-N from the brief · paths to read
+    Note over D: TDD for core logic,<br/>then code, tests, README
+    D-->>O: handoff: demo command, tests n/n passing
+    O->>R: increment mode · only the diff since the last approved commit
+    Note over R: run the suite · map each AC<br/>to a test · check conventions
+    R-->>O: handoff: ok or changes-requested
+    rect rgb(255,247,237)
+        opt blocker or major findings (at most 2 rounds)
+            O->>D: fix mode · the findings
+            D-->>O: handoff
+            O->>R: re-review just the fix diff
+        end
+    end
+    Note over O: git commit "squad: inc-N — title"<br/>(includes the STATE update)
+    opt each-increment is a chosen stop point
+        O->>U: stop: see it with the command, decisions taken, what's next
+        U-->>O: continue · redirect · change stops · harden now · park
+    end
+```
 
 ### The handoff contract
 
-Every persona returns the same structured block, which is what makes the chain reliable:
-
 ```
-PHASE:      <analyze | plan | dev | review | security>
-ARTIFACT:   <path written>
-STATUS:     <ok | needs-user-decision | blocked | changes-requested>
-SUMMARY:    <2–4 sentences>
+PHASE:      <shape | poc | increment-N | harden>
+ARTIFACT:   <paths written>
+STATUS:     <ok | needs-user-decision | changes-requested | blocked>
+SUMMARY:    <2–4 sentences; for Dev: how to see it — command + expected output>
 DECISIONS:  <choices made, 1-line rationale each>
-OPEN:       <questions for the user, if needs-user-decision>
+OPEN:       <assumptions / open choices, each with the recommended option>
 FINDINGS:   <review/security only: {severity, area, issue, fix}>
 NEXT:       <recommended next action>
 ```
 
-The orchestrator routes on `STATUS`: `ok` → advance; `needs-user-decision` → folded into the plan
-before approval, decided by the orchestrator (and logged) after it — never a mid-run question;
-`changes-requested` → loop back to the Developer; `blocked` → worked around, or a hard stop.
-
-### State & versioning
-
-All lifecycle artifacts live under `docs/squad/`:
+### State and artifacts
 
 ```
 docs/squad/
-├── STATE.md            # effort, model roster, kickoff answers, current phase, artifact versions, decisions taken — the resume point
-├── analyze-vN.md       # scope, acceptance criteria, success metrics
-├── plan-vN.md          # the plan you approve: goal, FR/NFR, definition of success, architecture, stack, work plan
-├── dev-vN.md           # implementation notes
-├── review-vN.md        # quality review outcomes + findings
-├── security-vN.md      # security review outcomes + findings
-└── adr/                # architecture decision records
+├── STATE.md            # effort, roster, roadmap status, stop points, stop log, decisions — the resume point
+├── direction.md        # CEO go/no-go (high only)
+├── brief-v1.md         # scope + design + roadmap — the plan of record (shown at the `brief` stop, if chosen)
+├── threat-model.md     # SecOps, sensitive designs only
+├── inc-00.md           # PoC notes + how to run it
+├── inc-01.md           # increment notes + demo command   (fix rounds append a section)
+├── inc-01-review.md    # Reviewer verdict + findings
+├── harden-review.md    # QA edge-case matrix, coverage
+├── harden-security.md  # security findings
+└── adr/                # decision records (high, or a genuine fork)
 ```
 
-The version is **bumped on every loop iteration and never overwritten**, so history stays
-auditable. `STATE.md` is read on entry and updated after each phase — an interrupted run resumes
-from it instead of restarting.
+Durable project docs live at the project root: `README.md` always, `SPEC.md` at medium and high.
+If the project is a git repo with a clean tree, Squad works on a local `squad/<slug>` branch with
+**one commit per milestone** — a rollback point at every step. It never pushes.
+Templates and the Definition of Done are in [`references/`](./references/).
 
-## How it works (the lifecycle)
+## Personas
 
-You are asked things at exactly two points:
+![The squad — six specialists colour-coded by tool privilege: shape (no code), build (edits code), review (reports, never edits); sonnet by default, opus only in the Deep profile](./images/squad-personas.png)
 
-1. **Kickoff** — one question batch: clarifying questions that change scope or design, the effort
-   level, and the model / reasoning roster.
-2. **Plan approval** — you approve `plan-vN.md` (or change it) before any code is written.
-
-After that the orchestrator runs to completion on its own: each phase invokes its owner persona,
-collects the handoff, updates `STATE.md`, and clears its gate. Choices that come up mid-run are
-made by the orchestrator (the persona's recommendation, or the most conservative option), logged
-under *Decisions taken*, and listed in the final report. It stops early only on a **hard stop** —
-a missing credential/access, an irreversible action the plan didn't cover, or a security blocker
-with no fix inside the approved scope.
-
-![The lifecycle — Analyze → Plan → Dev → Review → Monitor, a loop not a line, with findings looping back to Dev and new requirements back to Analyze](./images/squad-lifecycle.png)
-
-1. **Kickoff** — one question batch (clarifications, effort, roster). Effort scales both what gets
-   built and which personas run: low collapses to Plan → Dev with an inline check; medium runs one
-   Reviewer pass; high runs the full parallel Reviewer + SecOps loop.
-2. **Analyze** (`squad-product-manager`, direction from `squad-ceo`). Scope, acceptance criteria,
-   success metrics, assumptions → `analyze-vN.md`. No separate gate — scope is approved with the plan.
-3. **Plan** (`squad-architect`, with Developer/PM input). Tech stack + architecture, the options
-   weighed with pros/cons/cost and the recommended one, ADRs → `plan-vN.md` + `docs/adr/*`. On security/data-sensitive designs it
-   **shifts left**, consulting SecOps (threat model) and Reviewer (testability) here.
-   **Gate (every effort, before any code):** you approve `plan-vN.md` — a short document covering
-   the goal, scope, functional and non-functional requirements, definition of success,
-   architecture, tech stack and why, **assumptions & decisions taken**, test & verification
-   strategy, risks, and a **work plan** table:
-
-   | # | Work item | Persona | Model | Reasoning | Output | How it's verified |
-   |---|---|---|---|---|---|---|
-
-   Approve it, change who does what (persona, model, reasoning), or send scope/design back. Every
-   change writes a new plan version. **This is the last question you're asked.**
-4. **Dev** (`squad-developer`). Implement to the approved plan; tests per effort (≥90% on critical
-   logic at high); durable `README.md`/`SPEC.md` + `dev-vN.md`. **Gate:** build + tests pass locally.
-5. **Review** (`squad-reviewer` + `squad-secops`, in parallel). Findings tagged by severity go back to
-   the Developer. **Bounded loop: at most 3 Dev↔Review rounds**; anything still open is reported,
-   not asked about. **Gate:** Definition
-   of Done — build green, coverage met, zero open blocker/major findings, docs updated, acceptance
-   criteria satisfied.
-6. **Monitor** (`squad-ceo` + PM). Verify the output against goals and deliver the **final report**:
-   what was built, how to run it, test/coverage results, decisions taken during the run, open items.
-   It ends without a question; next steps like committing are listed, not asked.
-   New requirements you raise afterwards loop back into **Analyze** — artifacts and product are
-   revised, not restarted.
-
-Consequential choices are surfaced **in the plan** — options with trade-offs and the recommended
-one — so you decide them once, at approval. After that, the orchestrator decides and logs.
-
-## Personas (subagents)
-
-| subagent | Role | Owns / produces |
+| subagent | Role | Runs in |
 |---|---|---|
-| `squad-ceo` | CEO | Direction, value/cost/ROI, go/no-go |
-| `squad-product-manager` | Product Manager | Scope, requirements, acceptance criteria → `analyze-vN.md` |
-| `squad-architect` | Architect | Tech stack, architecture, ADRs → `plan-vN.md` + `adr/` |
-| `squad-developer` | Developer | Implementation, tests, docs (`README.md`/`SPEC.md`) → code + `dev-vN.md` |
-| `squad-reviewer` | Reviewer (+ QA) | Quality/correctness/perf gate **and QA** — runs the tests, builds an edge-case matrix → `review-vN.md` |
-| `squad-secops` | SecOps | Security review gate → `security-vN.md` |
-
-![The squad — six specialists (CEO, Product Manager, Architect, Developer, Reviewer +QA, SecOps), colour-coded by tool privilege: plan/no-code, builds, and reviews](./images/squad-personas.png)
+| `squad-ceo` | CEO | Shape at high effort: go/no-go, what the PoC must prove |
+| `squad-product-manager` | Product Manager | Shape at high effort: scope, acceptance criteria |
+| `squad-architect` | Architect | Shape (all of it at medium): design + PoC/increment roadmap; reshape after feedback |
+| `squad-developer` | Developer | PoC, increments (tests with each), fixes, Harden docs |
+| `squad-reviewer` | Reviewer (+ QA) | Diff-scoped review per increment; full QA in Harden |
+| `squad-secops` | SecOps | Threat model for sensitive designs; security review in Harden |
 
 ## Install
 
@@ -220,20 +381,20 @@ Verify with `/plugin list --enabled`, then try:
 Assemble the squad to build a URL shortener service
 ```
 
-Only want it in one repo? `claude plugin install squad@orhund8z --scope project` (shared with the team) or `--scope local` (just you).
-The personas are invoked as `squad:squad-ceo`, `squad:squad-architect`, and so on. If you previously symlinked the old standalone
-files into `~/.claude/skills/squad` or `~/.claude/agents/`, remove them so nothing shows up twice.
+Only want it in one repo? `claude plugin install squad@orhund8z --scope project` (shared with the
+team) or `--scope local` (just you). The personas are invoked as `squad:squad-ceo`,
+`squad:squad-architect`, and so on. If you previously symlinked standalone copies into
+`~/.claude/skills/squad` or `~/.claude/agents/`, remove them so nothing shows up twice.
 
 See the repo root [README](../../../../README.md#installation) for details.
 
-## Design
+## Development
 
-The full specification this skill and its agents are generated from lives at
-[`prompts/squad.md`](../../../../prompts/squad.md) — keep that as the source of truth and regenerate the
-files when the process changes.
-
-## Kickoff
-
-Just describe what you want built, e.g. *"build me a URL-shortener service"* or *"run the squad on
-this feature"*. The team opens with one batch of questions (clarifications, effort, models &
-reasoning), comes back once with the plan for approval, then runs to completion.
+- **Source of truth:** this `SKILL.md`, `references/`, and the agent files in `../../agents/`.
+  The design rationale (why PoC-first, hybrid testing, sonnet by default) is in
+  [`docs/DESIGN.md`](../../docs/DESIGN.md); every change and the reason for it is in the
+  [release notes](../../CHANGELOG.md) — add an entry with each change.
+- **Evals:** behavioural checks live in [`../../evals/`](../../evals/). Run them with
+  `claude plugin eval plugins/squad` (each case starts real squad runs, so it costs tokens).
+- **Images:** `images/*.png` are rendered from `images/src/*.html` with `node images/src/render.mjs`;
+  process diagrams are Mermaid, inline above.

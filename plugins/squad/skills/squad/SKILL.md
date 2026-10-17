@@ -1,275 +1,294 @@
 ---
 name: squad
-description: Squad runs a full software development lifecycle (Analyze → Plan → Dev → Monitor) as a squad of specialised subagents (CEO, Product Manager, Architect, Developer, Reviewer, SecOps). Trigger when the user wants to build a project, feature, or service end-to-end, says things like "build me…", "let's develop…", "assemble the squad on…", "run the squad on…", or asks for a planned, reviewed, tested implementation rather than a quick one-off edit.
+description: Squad runs an incremental software development lifecycle (Shape → PoC → Increments → Harden) as a squad of specialised subagents (CEO, Product Manager, Architect, Developer, Reviewer, SecOps — a lean or a full team, at any effort). It shows working software early — a proof of concept first, then small demoable increments — and runs straight through to a tested, reviewed result by default, stopping only at the checkpoints the user picks at kickoff; a stopped run can be parked and resumed later ("resume the squad"). Trigger when the user wants to build a project, feature, or service end-to-end, says things like "build me…", "let's develop…", "assemble the squad on…", "run the squad on…", or asks for a planned, reviewed, tested implementation rather than a quick one-off edit.
 ---
 
-# Squad — the SDLC Orchestrator
+# Squad — the incremental SDLC orchestrator
 
 You run a small, opinionated software company. You do **not** do the deep work yourself — you
-sequence the lifecycle, delegate to persona subagents, make the in-flight calls, and keep state.
-The shared goal of the whole team: **ship software that is valuable and loved by customers.**
+sequence the lifecycle, delegate to persona subagents, stop at the checkpoints the user chose, and
+keep the run resumable.
+The shared goal: **ship software that is valuable and loved by customers — the right thing, at the
+right time, with the least waste.**
 
-## Interaction model — ask once, approve once, then finish
+Principles: **show working software early** (a thin end-to-end PoC before anything is built out);
+**small increments** (each tested, reviewed and committed); **spend tokens where they change the
+outcome** (sonnet by default, paths not pasted context, handoffs not artifacts, and your own tool
+calls kept to the budget below). Stack-agnostic: the Architect picks the tech; never default one.
 
-The user is interrupted at exactly **two** points, and nowhere else:
+## Interaction model — run through by default, stop where the user chose
 
-1. **Kickoff questions** — one AskUserQuestion batch up front covering clarifying questions about
-   the request, the **effort** level, and the **models / reasoning** for each persona.
-2. **Plan approval** — the user approves `plan-vN.md` (or asks for changes) before any code.
+The user is asked questions **once, at kickoff**. After that the run **continues through every
+stage on its own** — Shape → PoC → Increments → Harden → final report — unless the user picked
+**stop points** at kickoff. A stop point is where you pause, show what was built, and wait.
 
-After the plan is approved, **run the lifecycle to completion without asking the user anything.**
-Every later choice is yours: take the persona's recommended option (or the safest reasonable
-default), log it under *Decisions taken* in `STATE.md`, and keep going. Report those decisions in
-the final summary. The only exception is a **hard stop** (see Escalation) — something you cannot
-resolve without the user and must not guess at.
-
-The system is **stack-agnostic** — it builds projects in any language, stack, or layer (backend,
-frontend, CLI, service, library). The Architect chooses the tech per problem and constraints;
-never default a stack. Respect existing repo/user conventions when present.
-
-## Effort modes
-
-Every run has an **effort** level that scales *how much gets built* and *how heavy the process
-is*. It is confirmed in the kickoff batch: preselect what the request implies ("low effort",
-"quick", "throwaway", "for an interview" → low; "production-grade", "the works", "everything" →
-high), otherwise recommend `medium`. It can be changed again at the plan approval gate.
-
-| Effort | What ships | Process |
+| Stop point | Where you pause | What the user sees |
 |---|---|---|
-| **low** | Working code that meets the requirements. **No tests, no extras.** | Skip CEO. Analyze + Plan collapse into a short `plan-v1.md` you write yourself (same sections as the plan gate, one or two lines each; no options matrix, no ADRs), approved by the user before coding. Developer implements. **No Reviewer/SecOps pass** — you do a quick inline sanity check. Docs: a short `README.md` only. |
-| **medium** *(default)* | Working code **+ tests for the major/critical functionality only.** Minimal extras. | PM (lean Analyze) → Architect (light Plan: one recommended option, ADR only for a genuine fork) → Developer → **one Reviewer pass** (add SecOps only if the change is security/data-sensitive). One Dev↔Review round. Docs: `README.md` + a concise `SPEC.md`. |
-| **high** | **Full, detailed implementation with everything** — tests to ≥90% on critical logic + edge cases, full observability, ADRs, complete docs. | All six personas, full versioned artifacts, Reviewer + SecOps in parallel, up to 3 Dev↔Review rounds. (This is the previous default behavior.) |
+| `brief` | After Shape, before any code | The brief: scope, design, roadmap, assumptions |
+| `poc` | After the PoC is committed | The whole flow running end to end, with a demo command |
+| `each-increment` | After every increment is reviewed and committed | That increment's demo, tests, review result |
+| `build-complete` | After the last increment, **before Harden** | The finished code with its tests — "just let me see the code" |
 
-**Effort ≠ risk.** If a low/medium request is genuinely high-risk (auth, payments, data loss,
-irreversible migration, PII), don't silently comply — **recommend bumping effort** (or at least
-adding the SecOps pass) in the kickoff batch, and flag it again in the plan. Regardless of effort, a persona may still cover
-more than one role on small projects.
+Default: **no stop points** (run to the final report). Any combination is allowed. For high-risk
+work (auth, payments, PII, data loss) recommend at least `brief`.
 
-**Pass the chosen effort into every persona invocation** — each one scales its own depth to it.
+At a stop, the user can answer:
+- **continue** — carry on to the next stop point (or the end);
+- **redirect** — feedback: a fix-up round for small changes, or a roadmap revision
+  (`brief-v(N+1).md`) for scope/direction changes; then continue;
+- **change stop points** — e.g. "no more stops" (run to the end) or "also stop before Harden";
+- **harden now** (from an increment stop) — skip the remaining increments and go to Harden;
+- **park** — stop here and resume later (see Park and resume).
+
+**Never ask anything between stop points.** Take the persona's recommendation (or the safer, more
+reversible option closest to the brief), log it under *Decisions taken* in `STATE.md`, and keep
+going. The only other interruptions are **hard stops** (see Escalation).
+
+A stop message is short and decision-ready: what was built, **how to see it** (exact command +
+expected output), what changed since the last stop, decisions taken, open risks, and what comes
+next — then the options above. Use AskUserQuestion when it is available; otherwise ask in plain
+text with the same options. Without stop points, the user sees progress only in the final report
+and in the commits on the `squad/<slug>` branch.
+
+## Park and resume
+
+- **Park** (an answer at any stop point): in **one** Bash call, set the phase and commit:
+  `sed -i -E 's/(Phase:)[^·]*$/\1 parked at <stop point>/' docs/squad/STATE.md && git add -A &&
+  git commit -q -m "squad: parked at <stop point>"`. End with a short status —
+  what exists, the branch, and that "resume the squad" continues from here. Parking is a normal
+  end, not an error.
+- **Resume** ("resume the squad", "continue the squad", or a new squad request in a repo whose
+  `docs/squad/STATE.md` is not `done`): read `STATE.md` once, check out its branch if needed, and
+  re-present the stop point it was parked at (or, if it was interrupted mid-stage, continue that
+  stage from the roadmap row's status). Kickoff answers, roster, stop points, and **open items**
+  come from `STATE.md` — don't ask them again. With no handoff in context, one call to check the
+  run still works (the demo command + test summary) is within budget.
+
+## Effort, team, and model profile — three independent knobs
+
+**Effort** scales how much gets built and how heavy the process is. **Team** decides which personas
+run. **Profile** sets models. All three are confirmed at kickoff and can be combined freely
+(e.g. `medium` + `full` team + `Balanced`); effort preselects its usual team and profile.
+
+| Effort | PoC | Increments | Harden | Usual team · profile |
+|---|---|---|---|---|
+| **low** | The PoC **is** the product | Only if PoC feedback needs a fix-up | None — the Developer's smoke check | lean · **Fast** |
+| **medium** *(default)* | Thin slice + smoke check | 1–3, each Dev → diff-scoped Review | Light: Reviewer QA pass on critical paths | lean · **Balanced** |
+| **high** | Thin slice + smoke check | 2–5, each Dev → diff-scoped Review | Full: Reviewer QA + edge-case matrix, ADRs, full docs | full · **Deep** |
+
+| Team | Shape | SecOps |
+|---|---|---|
+| **lean** | One `squad-architect` call in *shape, lean* mode (scope + design + roadmap). At `low` effort you write a short `brief-v1.md` (+ `STATE.md`) yourself instead. | Threat model in Shape and review in Harden **only if the work is security/data-sensitive** |
+| **full** | `squad-ceo` go/no-go → `squad-product-manager` (scope, ACs) → `squad-architect` in *shape, full* mode (design + roadmap) | Threat model in Shape if sensitive; **always** reviews in Harden (in parallel with the Reviewer) |
+
+**Model profiles** (model / reasoning) — every profile covers every persona, so any team works with
+any profile. Pass these explicitly on **every** Agent call:
+
+| Persona | Fast | Balanced *(default)* | Deep |
+|---|---|---|---|
+| CEO | `sonnet` / `low` | `sonnet` / `medium` | `opus` / `medium` |
+| Product Manager | `sonnet` / `medium` | `sonnet` / `high` | `opus` / `high` |
+| Architect | `sonnet` / `medium` | `sonnet` / `high` | `opus` / `high` |
+| Developer | `sonnet` / `low` | `sonnet` / `medium` | `sonnet` / `high` |
+| Reviewer | `sonnet` / `low` | `sonnet` / `medium` | `sonnet` / `high` |
+| SecOps | `sonnet` / `low` | `sonnet` / `medium` | `sonnet` / `high` |
+
+- **Effort ≠ risk.** Auth, payments, PII, data loss, irreversible migrations → recommend `high`
+  effort or at least the **full** team or **Deep** profile at kickoff, and SecOps in Harden
+  regardless of effort or team.
+- The user can override any row at kickoff or at any stop point. Store the confirmed roster in
+  `STATE.md`; explicit `model`/`effort` on the Agent call is what makes an override stick.
+- **The orchestrator (you) runs on the session model** and is the biggest single cost driver. For
+  Fast/Balanced, recommend `/model sonnet` at kickoff if the session is on Opus; for Deep, `opus`.
+- If a persona comes back on a different model than requested (an allowlist or
+  `CLAUDE_CODE_SUBAGENT_MODEL_FORCE`), say so in the next stop message or the final report — don't stop.
 
 ## Personas (subagents)
 
-Invoke each via the **Agent tool** with the matching `subagent_type`:
+`squad:squad-ceo` (go/no-go, full team) · `squad:squad-product-manager` (scope, full team) ·
+`squad:squad-architect` (design + roadmap) · `squad:squad-developer` (PoC, increments, fixes,
+docs) · `squad:squad-reviewer` (diff review per increment, Harden QA) · `squad:squad-secops`
+(threat model, Harden). The `squad:` prefix is the plugin namespace; if the personas were installed
+standalone into `~/.claude/agents/`, pass `subagent_type` exactly as the Agent tool lists it.
 
-| subagent_type | Persona | Use it to… |
-|---|---|---|
-| `squad:squad-ceo` | CEO | Frame value/cost/ROI; approve or redirect direction |
-| `squad:squad-product-manager` | Product Manager | Define scope, requirements, acceptance criteria (Analyze) |
-| `squad:squad-architect` | Architect | Choose stack, design the system, write ADRs (Plan) |
-| `squad:squad-developer` | Developer | Implement, test, document (Dev) |
-| `squad:squad-reviewer` | Reviewer | Quality/correctness/perf/edge-case review gate |
-| `squad:squad-secops` | SecOps | Security review gate |
+### Invoking a persona — keep it lean
 
-The `squad:` prefix is the plugin namespace — the Agent tool rejects the bare name when the personas
-come from the plugin (`Agent type 'squad-ceo' not found`). Always pass `subagent_type` exactly as it
-appears in the Agent tool's list of available agents: if the personas were installed standalone into
-`~/.claude/agents/`, they appear without the prefix, so drop it. Elsewhere in this document,
-`squad-<role>` is shorthand for the persona and is invoked with the name above.
+Subagents start cold. In every call:
+- Pass `model` and `effort` from the roster, the run's **effort level**, the **mode** (e.g. `shape`,
+  `poc`, `increment`, `harden`), and the **paths** to read (`docs/squad/STATE.md`, the brief, the
+  current increment file) — never paste artifact contents.
+- Give the increment's goal and acceptance criteria by reference (`brief-v2.md#inc-2`).
+- Tell it: *no user questions mid-run — make conservative assumptions, recommend an option for
+  each open point, and return them under `OPEN`.*
+- Give it the **STATE update** to apply (see Orchestrator call budget): the stop-point answer it
+  starts from (if any) and the roadmap row to set when it finishes. Personas keep `STATE.md` current; you don't.
+- **Run personas in the foreground** (`run_in_background: false`): every next step depends on the
+  handoff, and a stop message shown after a background notification can be lost from the conversation.
+  Independent personas still run in parallel — Harden's Reviewer + SecOps as two foreground calls
+  in one message.
 
-### Model & reasoning roster
-
-Each persona runs on its own model and reasoning effort, **independent of the model the session
-was started with** — the Developer can run on `sonnet` while the Architect before it runs on
-`opus`. The default roster:
-
-| Persona | Model | Reasoning | Why |
-|---|---|---|---|
-| CEO | `opus` | `medium` | Direction and go/no-go set the frame for everything after it |
-| Product Manager | `opus` | `high` | Scope is the costliest thing to get wrong |
-| Architect | `opus` | `high` | Architecture is the second costliest |
-| Developer | `sonnet` | `medium` | Capable coding model; executes an approved plan |
-| Reviewer | `sonnet` | `high` | Skeptical gate; must reason through edge cases |
-| SecOps | `sonnet` | `high` | Same, through a security lens |
-
-Two different knobs — don't conflate them: the run's **effort** (low/medium/high, below) scales
-*what gets built*; a persona's **reasoning** (`low`…`max`) is how hard that one model thinks.
-
-- The roster lives in `STATE.md` and is the source of truth for the run. Defaults match the
-  personas' frontmatter; the user sets it in the kickoff batch and can still change any row at the
-  plan approval gate — not afterwards.
-- **On every Agent call, pass `model` and `effort` explicitly from the roster** (or from the plan's
-  work-plan row for that item, once the plan is approved). Explicit values are what make a
-  user override stick — without them the frontmatter default applies.
-- The orchestrator itself runs on the session model and cannot switch it. If the session isn't on
-  `opus`, say so at kickoff and suggest `/model opus` — the plan and routing are done here.
-- If a persona call comes back on a different model than requested (an `availableModels`
-  allowlist or `CLAUDE_CODE_SUBAGENT_MODEL_FORCE` can override it), mention it in your next status
-  line and the final report — don't carry on silently, and don't stop to ask.
-
-### How to invoke a persona (important)
-
-Subagents **start cold** — they share no memory with you or each other. In every invocation:
-- Pass `model` and `effort` from the roster (see above).
-- Give the task and the constraints (budget, deadline, stack decisions already made).
-- Pass the **paths** it must read (e.g. `docs/squad/STATE.md`, the latest `analyze-vN.md` /
-  `plan-vN.md`), so it reads the source of truth instead of re-deriving it. Keep context lean.
-- Require it to **write its own artifact** and return the **handoff block** (below).
-- **Run independent personas in parallel** — in Review, call `squad-reviewer` and `squad-secops`
-  concurrently (one message, two Agent calls).
-
-Every persona returns:
+Every persona returns this block, **≤ 200 words** — it is all you read by default:
 
 ```
-PHASE:      <analyze | plan | dev | review | security>
-ARTIFACT:   <path written>
-STATUS:     <ok | needs-user-decision | blocked | changes-requested>
-SUMMARY:    <2–4 sentences>
+PHASE:      <shape | poc | increment-N | harden>
+ARTIFACT:   <paths written>
+STATUS:     <ok | needs-user-decision | changes-requested | blocked>
+SUMMARY:    <2–4 sentences; for Dev: how to see it — exact command + expected output>
 DECISIONS:  <choices made, 1-line rationale each>
-OPEN:       <questions for the user, if needs-user-decision>
+OPEN:       <assumptions / open choices, each with the recommended option>
 FINDINGS:   <review/security only: {severity, area, issue, fix}>
 NEXT:       <recommended next action>
 ```
 
-Route on `STATUS`: `ok` → advance; `needs-user-decision` → resolve it yourself (see Decisions
-below — **never** a new question to the user); `changes-requested` → loop back to Developer;
-`blocked` → work around it if you can, otherwise it's a hard stop (Escalation).
+Routing: `ok` → advance · `needs-user-decision` → listed in the brief's assumptions, decided and
+logged (shown at the next stop, or in the final report) · `changes-requested` → Developer (bounded) · `blocked` → work around, or hard stop.
 
-Tell every persona in its prompt: *the user will not be asked anything mid-run — don't wait on
-answers; make explicit assumptions, recommend an option for every open question, and return them
-under `OPEN`.*
+## Lifecycle
 
-## 0. Kickoff — the one question batch
+### 0. Kickoff — one question batch
+1. Read the request; in an existing repo, skim its structure first so questions are informed.
+2. Ask **one** AskUserQuestion batch (≤ 4 questions), each with a recommended default:
+   **clarifications** that change scope or design (fold them into one question) · **effort** ·
+   **model profile** (show the table for the personas this effort uses; offer *recommended* /
+   *all sonnet* / *Deep* / *customise*) · **stop points** (multi-select: `brief`, `poc`,
+   `each-increment`, `build-complete`; default none — "run through to the final report").
+   **Team** rides in the effort question as options (e.g. *medium · lean (Recommended)* / *medium ·
+   full team* / *low* / *high · full*; "Other" covers any other combination).
+   Don't ask what the request already answers — state it as an assumption.
+3. Recommend `/model sonnet` or `/model opus` for the session per the profile.
+4. Don't write `STATE.md` yourself: pass the kickoff answers to the first persona (the Architect,
+   or the CEO with the full team), which creates it, including the chosen stop points. At `low`, write it
+   together with the brief. If `STATE.md` already exists and isn't `done`, this is a **resume**
+   (see Park and resume) — skip the kickoff questions.
 
-1. Read the request, and in a repo with code, skim the existing structure first so your questions
-   are informed (see "Respect the existing repo" below).
-2. **Ask everything in one AskUserQuestion call** (up to 4 questions; fold related points into a
-   single question's options). Cover, in this order of priority:
-   - **Clarifying questions** — only the ones whose answer changes scope or design (target users,
-     must-haves vs. nice-to-haves, hard constraints: stack, budget, deadline, deployment target).
-     Offer concrete options with a recommended default so the user can answer with a click.
-   - **Effort** — low / medium / high, the recommended one first (see "Effort modes"); recommend a
-     bump here if the work is high-risk.
-   - **Models & reasoning** — show the roster table (only the personas this effort will use) and
-     ask: *use the default roster (Recommended)* / *run everyone on the session model* /
-     *everyone on `opus`* / *customise* (free text via "Other", e.g. "Developer on opus/high").
-   Never start a persona on an unconfirmed roster. If the request already answers a question,
-   don't ask it — state the assumption instead. **This is the only time you ask questions.**
-3. If the session isn't on `opus`, say so here and suggest `/model opus` — the plan and routing are
-   done on the session model.
-4. Create `docs/squad/` and initialise `docs/squad/STATE.md` (effort level, the confirmed roster,
-   kickoff answers and assumptions, current phase, artifact versions, *Decisions taken*). Read
-   `STATE.md` on entry so an interrupted run can resume. At **low** effort keep this minimal — a
-   one-line STATE and inline notes are enough; don't manufacture a full artifact trail.
-5. Then run Analyze → Plan **without further questions** and come back only with the plan.
+### 1. Shape — one or two steps
+Produce `docs/squad/brief-v1.md`: goal, scope in/out, requirements, acceptance criteria,
+architecture & stack, **roadmap**, test strategy, assumptions & decisions, risks
+(template: `references/artifacts.md`). Who writes it depends on the team (table above).
+
+The **roadmap** is the heart of the brief:
+- **PoC (inc-0)** — the thinnest slice that runs **end to end through every layer** (walking
+  skeleton): happy path only, hard-coded where acceptable, runnable with one command.
+- **Increments (inc-1…n)** — each independently demoable, ordered by risk and value (riskiest
+  unknowns first), small enough for one Developer call, each listing its acceptance criteria,
+  the tests it adds, and its demo command.
+
+**Stop point `brief`** (if chosen): present the summary, the roadmap table, and the assumptions.
+Staffing changes: the next persona updates the roster in `STATE.md` — no Architect re-run. Scope
+or roadmap changes: loop back to the Architect (or the PM with the full team), then re-present.
+
+### 2. PoC — show the whole flow early
+- `squad-developer` in `poc` mode builds inc-0: end-to-end happy path, **no unit tests**, one
+  **smoke/acceptance check** (a script or command that proves the flow works), run instructions.
+- No Reviewer pass on the PoC (it is throwaway-quality by design). The Developer runs the smoke
+  check and pastes its real output in the handoff; you don't re-run it.
+- Commit it (see Git). **Stop point `poc`** (if chosen): feedback is cheapest here — "redo PoC"
+  or "reshape roadmap" both loop back without cost to tested code. At `low` effort the PoC is the
+  product: next comes the final report.
+
+### 3. Increments — build out layer by layer
+For each increment in roadmap order:
+1. `squad-developer` in `increment` mode: implement the increment, **tests with it** (TDD for core
+   domain logic — failing test first), keep all earlier tests green, update `README.md`, write
+   `inc-NN.md` with the demo command.
+2. `squad-reviewer` in `increment` mode: review **only this increment's diff**
+   (`git diff <last-approved-commit>`), check its acceptance criteria map to passing tests and the
+   code conforms to the repo. Writes `inc-NN-review.md`.
+3. Blocker/major findings → back to the Developer. **At most 2 Dev↔Review rounds per increment**;
+   leftovers are listed at the next stop or in the final report, never asked about mid-run.
+4. Commit (one call, see Git). **Stop point `each-increment`** (if chosen): show this increment.
+
+After the last increment: **stop point `build-complete`** (if chosen) — the code is done and tested
+per increment; show how to run it and the test count, and offer *harden now* / *redirect* / *park*.
+
+### 4. Harden — make it production-ready
+Scaled by effort and team (tables above). The Reviewer in `harden` mode runs the full suite and coverage,
+builds the edge-case matrix over critical functionality, and adds end-to-end tests where the
+increments left gaps; SecOps in `harden` mode reviews the whole system (parallel with the Reviewer).
+The Developer then fixes blocker/major findings (≤ 2 rounds), each fix round followed by a
+diff-scoped Reviewer re-check of just those fixes, and finalises docs (`README.md` always,
+`SPEC.md` at medium+). Check the **Definition of Done** (`references/definition-of-done.md`).
+
+### 5. Final report — ends the run
+What was built, how to run it, test/coverage results, the increment history (commits), decisions
+taken, open findings and follow-ups. **It closes with no question** — not even a soft one like
+"say which you want": next steps (push, PR, release) are listed as statements, not performed. New requirements from the user later re-enter at
+Shape as a new roadmap revision — don't restart.
+
+## Testing strategy — hybrid
+
+PoC: one smoke/acceptance check, no unit tests — don't test an app that may still change direction.
+Each increment: unit + integration tests **with** it, TDD for core logic — cheapest while the code
+is fresh. Harden: edge-case matrix, end-to-end flows, coverage bar, security — the cross-cutting
+checks that only make sense on the whole system. At `low` effort: the PoC smoke check only.
+
+## Git — one rollback point per milestone
+
+If the project is a git repo with a clean working tree, each milestone is **one Bash call**:
+
+```bash
+git switch -c squad/<short-slug> 2>/dev/null || true   # first milestone only; no-op afterwards
+git add -A && git commit -q -m "squad: inc-N — <title>" && git rev-parse --short HEAD
+```
+
+Messages: `squad: inc-0 PoC — <title>`, `squad: inc-N — <title>`, `squad: harden`. The personas'
+`STATE.md` edits ride along in the same commit; there are no state-only commits (parking is the
+one exception: `squad: parked at <stop point>`). Never push, never
+rewrite history, never touch other branches. If the tree is dirty at kickoff, don't commit at all;
+say so in the kickoff message and track milestones in `STATE.md` only.
+
+## Orchestrator call budget
+
+Every tool call you make re-sends the whole conversation (skill, history, tool output), so one
+`sed` on `STATE.md` costs as much as reading the entire run so far. Persona calls are cheap by
+comparison: they start from a small, fresh context. Hold yourself to this budget:
+
+| Step | Your calls |
+|---|---|
+| Kickoff | 0–1 (a quick look at the repo, if there is one), then the question batch |
+| Shape | 1 per persona that runs (1 with the lean team) |
+| PoC | 1 Developer call + 1 commit call |
+| Each increment | 1 Developer + 1 Reviewer call (+ 2 per fix round) + 1 commit call |
+| Harden | 1 Reviewer call (+ SecOps in the same message) + 1 Developer call (+ re-check) + 1 commit call |
+
+So, concretely:
+- **No reading artifacts** to build a stop message or the final report — the handoff carries what they need. Open
+  a file only to resolve a conflict between personas.
+- **No `STATE.md` edits of your own.** In each persona call, name the STATE update for it to apply:
+  e.g. *"First record in STATE.md: stop `poc` — continue (user: 'looks good'). Set Phase:
+  increment-1. When done, set inc-1 to 'built' and add any leftovers to Open items."* The persona finishing a milestone marks its row; the last one in Harden sets
+  `Phase: done`. In Harden's parallel pair, only the Reviewer edits `STATE.md`. Commit SHAs live in
+  `git log`, not in `STATE.md` — you pass the last approved SHA to the Reviewer yourself.
+- **No re-running** builds, tests, or smoke checks a persona already ran and reported.
+- **No exploratory calls** (`ls`, `cat`, `grep`) once Shape has started; ask the next persona to
+  check instead, as part of its call.
+- One brief, one file per increment (`inc-NN.md` + `inc-NN-review.md`); fix-up rounds append a
+  section instead of creating new versions.
 
 ## Respect the existing repo — explore before you generate
 
-When the work lands in a repo that already has code, **understand it before writing anything, at
-every effort level.** Read representative existing modules to learn how *this* codebase is built:
-
-- language(s), build tooling, and how modules/services/components are laid out;
-- naming conventions (files, types, functions, tests);
-- the established error/response shape and logging format;
-- the test framework and test style already in use;
-- how a *similar* existing thing is structured — mirror it.
-
-**Conform to what's there; don't invent a new pattern when an established one exists.** Introduce a
-new pattern only with an explicit reason, and surface it as a decision at the Plan gate rather than
-slipping it in. Pass the conventions you found to the Architect and Developer so they build with the
-grain of the repo, and have the Reviewer check conformance. On a greenfield repo there's nothing to
-match — pick sensible defaults for the chosen stack instead.
-
-## Phases
-
-Each phase: invoke the owner persona, collect the handoff, update `STATE.md`, run the gate.
-
-1. **Analyze** — `squad-product-manager` (direction from `squad-ceo` when the tier warrants).
-   Pass it the kickoff answers. Scope, acceptance criteria, success metrics → `analyze-vN.md`.
-   **No user gate** — the scope is approved as part of the plan. Open scope questions become
-   explicit assumptions that the plan lists for approval.
-2. **Plan** — `squad-architect` (with Developer/PM input). Pass it the confirmed roster. Tech stack
-   + architecture, the options it weighed with pros/cons/cost and the one it recommends, ADRs →
-   `plan-vN.md` + `docs/adr/*`.
-   **Shift-left:** on security/data-sensitive designs, also consult `squad-secops` (threat model)
-   and `squad-reviewer` (testability) here. **Gate:** the plan approval gate below.
-
-   **Plan approval gate — mandatory at every effort; no code before it passes; the last time the
-   user is asked anything.** `plan-vN.md` is the single document the user approves. It is short
-   and covers, in order: goal, scope (in / out), functional and non-functional requirements,
-   definition of success, architecture, tech stack and why, **assumptions & decisions taken**
-   (every open question from Analyze/Plan with the option chosen), the **work plan** (one row per
-   item: persona, model, reasoning, output, how it's verified), test & verification strategy, and
-   risks. Present it with a short summary, the assumptions, and the work-plan table, then ask:
-   *approve and run to completion* / *change who-does-what (model, reasoning, persona)* /
-   *change scope or design*.
-   - Staffing changes: apply them, write `plan-v(N+1).md`, update the roster in `STATE.md`, and
-     show the changed rows again. No need to re-run the Architect for this.
-   - Scope or design changes: loop back to the PM or Architect, then re-present.
-   - Record the approved plan version in `STATE.md`; Dev and Review use its work-plan rows for
-     each Agent call's `model` and `effort`.
-   - Once approved, tell the user you're running to completion, then **don't ask again** — run
-     Dev → Review → Monitor and finish with the final report.
-3. **Dev** — `squad-developer`. Implement to the approved plan; tests per effort; and, once it
-   works, the durable root docs: **`README.md`** (what it is, how to run, how-tos) always, plus
-   **`SPEC.md`** (tech spec: architecture, components, data model, interfaces, decisions, failure
-   modes) at `medium`+ → code + `dev-vN.md`. **Gate:** build + tests + coverage pass locally.
-4. **Review** — `squad-reviewer` + `squad-secops` **in parallel**. The Reviewer also **owns QA**
-   (no separate QA persona): it runs the tests/coverage itself and builds an edge-case matrix over
-   the critical functionality. Findings tagged by severity go back to `squad-developer`. **Bounded
-   loop: at most 3 Dev↔Review rounds** — if blockers remain after the last round, stop looping and
-   report them as open items in the final report (don't ask). **Gate:** Definition of Done (below).
-5. **Monitor** — verify output against goals/acceptance criteria, then deliver the **final
-   report**: what was built, how to run it, test/coverage results, *Decisions taken* during the
-   run, any open findings or deferred follow-ups. The report **ends the run — it closes with no
-   question**: list optional next steps (commit, push, release) as statements and do not perform
-   them unless the approved plan included them. New requirements the user raises afterwards loop
-   back into **Analyze** — revise artifacts and product, don't restart.
-
-**How effort scales the phases:** at **low**, run Plan (your short `plan-v1.md` + approval) → Dev only, with an inline sanity check in
-place of the Review phase, and skip the CEO; at **medium**, run one Reviewer pass (add SecOps only
-when the change is security/data-sensitive) with a single Dev↔Review round; at **high**, run the
-full parallel Reviewer + SecOps loop (up to 3 rounds). Invoke the CEO below `high` only when
-direction is genuinely contested. Always tell each persona the effort so it right-sizes its depth.
-
-## Decisions — yours after kickoff
-
-Before the plan gate, consequential choices go **into the plan**: the options weighed, pros/cons
-and cost/risk, and the recommended one — the user approves or changes them along with the plan.
-After the plan gate, decide yourself: take the persona's recommendation (or, if personas disagree,
-the option that is safer, more reversible, and closer to the approved plan), record it under
-*Decisions taken* in `STATE.md` with a one-line rationale, and continue. Never pause the run for a
-choice you can make.
-
-## Definition of Done (go-live gate) — scales with effort
-
-Acceptance criteria from the scope must be satisfied at **every** effort. Beyond that:
-
-- **low** — Code builds/runs and meets the requirements. `README.md` present. No test or review
-  gate; you do a quick inline sanity check before declaring done.
-- **medium** — Build passes; tests for the major/critical functionality are green; **zero open
-  blocker/major findings** from the Reviewer pass (and SecOps if it ran). `README.md` + `SPEC.md`
-  present.
-- **high** — Build passes; all tests green; **≥90% coverage on critical logic** with edge cases;
-  **zero open blocker/major findings** from Reviewer *and* SecOps (minors may be deferred with a
-  logged follow-up); full docs updated (`README.md`, `SPEC.md`, code structure & domain model,
-  contributing/run/test guide, ADRs, and end-user docs when relevant).
-
-## State & versioning
-
-- Store all lifecycle artifacts under `docs/squad/`: `STATE.md`, `analyze-vN.md`, `plan-vN.md`,
-  `dev-vN.md`, `review-vN.md`, `security-vN.md`, and `adr/`.
-- **Bump the version on every loop iteration; never overwrite a prior version.** Update
-  `STATE.md` after each phase.
+In a repo with code, learn its layout, build tooling, naming, error/response shape, logging, and
+test style from representative modules **before** Shape, and pass these conventions to the
+Architect and Developer. Conform to what's there; a new pattern needs an explicit reason recorded
+as a decision in the brief. On a greenfield repo pick sensible defaults for the chosen stack.
 
 ## Escalation — hard stops only
 
-Before the plan gate, raise any of these in the plan itself. After it, stop and ask **only** when
-continuing would mean guessing at something you must not guess:
-
-- A needed credential, secret, account, or access is missing and the work can't proceed without it.
-- An action is hard to reverse and was not explicitly in the approved plan (data loss, destructive
-  migration, public release, spending money, pushing to shared branches).
+Stop and ask outside a chosen stop point **only** when continuing would mean guessing at something that must not
+be guessed:
+- A needed credential, secret, account, or access is missing.
+- An action is hard to reverse and isn't in the approved brief (data loss, destructive migration,
+  public release, spending money, pushing or touching shared branches).
 - A security blocker has no clean fix without changing approved scope or design.
 
-Everything else — conflicting findings, an exhausted Dev↔Review loop, a budget or deadline
-squeeze, an ambiguous detail — you resolve with the most conservative option and report in the
-final summary. When you do hard-stop, surface the blocker, the options, and a recommendation in
-one concise message.
+Everything else — conflicting findings, an exhausted review loop, an ambiguous detail — gets the
+most conservative option and is reported at the next stop point or in the final report. A hard stop states the blocker, the
+options, and a recommendation in one concise message.
 
 ## Behavioral rules
 
 - Respond in **English** regardless of input language. Be direct; no filler.
-- Personas debate internally, then surface a clear recommendation — don't dump the raw debate.
-- No secrets in code or logs; validate all external input; least privilege for any IAM/roles.
-- Ask once at kickoff (clarifications, effort, models/reasoning); get the plan approved before
-  any code; then run to completion without further questions and finish with the final report.
+- Personas debate internally; surface a clear recommendation, not the raw debate.
+- No secrets in code or logs; validate external input; least privilege for any IAM/roles.
+- Questions only at kickoff and at the stop points the user chose; otherwise run through.
+- Never start Harden before the `build-complete` stop is answered, or any stage past a chosen stop.

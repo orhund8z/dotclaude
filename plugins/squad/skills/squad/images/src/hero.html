@@ -1,0 +1,40 @@
+<!doctype html><html><head><meta charset="utf-8"><link rel="stylesheet" href="_base.css"><style>
+body{width:1200px;height:675px;position:relative;overflow:hidden;background:radial-gradient(circle at 50% 38%,#ecebf3 0,var(--bg) 45%)}
+h1{font-size:76px;padding-top:26px}.sub{font-size:20px;margin-top:4px}
+.track{display:flex;justify-content:center;align-items:center;gap:10px;margin-top:40px}
+.ms{background:#fff;border-radius:10px;box-shadow:0 3px 10px rgba(0,0,0,.08);padding:12px 16px;text-align:center;min-width:120px;border-top:5px solid var(--c)}
+.ms b{display:block;font-size:15px}.ms span{font-size:11px;color:var(--muted)}
+.gate{font-size:18px;color:var(--muted)}
+.cap{text-align:center;color:#9ca3af;font-style:italic;font-size:13px;margin-top:14px}
+.bots{position:absolute;bottom:162px;left:0;right:0;display:flex;justify-content:space-around;padding:0 70px}
+.bot{width:84px;text-align:center}
+.ant{width:2px;height:12px;background:var(--c);margin:0 auto;position:relative}.ant:before{content:"";position:absolute;top:-6px;left:-4px;width:10px;height:10px;border-radius:50%;background:var(--c)}
+.head{width:66px;height:58px;border:3px solid var(--c);border-radius:16px;background:#fff;margin:0 auto;position:relative}
+.head:before,.head:after{content:"";position:absolute;top:18px;width:10px;height:10px;border-radius:50%;background:var(--ink)}.head:before{left:16px}.head:after{right:16px}
+.mouth{position:absolute;left:21px;top:30px;width:20px;height:9px;border:3px solid var(--ink);border-top:none;border-radius:0 0 12px 12px}
+.body{width:84px;height:88px;background:var(--c);border-radius:24px 24px 0 0;margin-top:2px;display:flex;align-items:center;justify-content:center;font-size:22px}
+.desk{position:absolute;bottom:0;left:30px;right:30px;height:162px;background:var(--navy);border-top:6px solid var(--indigo)}
+.labels{display:flex;justify-content:space-around;padding:22px 40px 0}
+.labels div{background:#faf8f3;border-radius:7px;width:148px;text-align:center;font-weight:700;font-size:14px;padding:8px 0;color:var(--c)}
+.foot{color:#c7c9f5;text-align:center;font-size:14px;margin-top:22px}
+.t{--c:var(--teal)}.o{--c:var(--orange)}.i{--c:var(--indigo)}
+</style></head><body>
+<h1>Squad</h1><p class="sub">a software company that happens to be six AI agents</p>
+<div class="track">
+ <div class="ms t"><b>Shape</b><span>brief + roadmap</span></div><div class="gate">⏸ →</div>
+ <div class="ms o"><b>PoC</b><span>whole flow, early</span></div><div class="gate">⏸ →</div>
+ <div class="ms o"><b>Increments</b><span>small, demoable</span></div><div class="gate">⏸ →</div>
+ <div class="ms i"><b>Harden</b><span>QA · security · docs</span></div>
+</div>
+<p class="cap">runs straight through by default · ⏸ = optional stop you choose at kickoff · park &amp; resume anytime</p>
+<div class="bots">
+ <div class="bot t"><div class="ant"></div><div class="head"><div class="mouth"></div></div><div class="body">👔</div></div>
+ <div class="bot t"><div class="ant"></div><div class="head"><div class="mouth"></div></div><div class="body">📋</div></div>
+ <div class="bot t"><div class="ant"></div><div class="head"><div class="mouth"></div></div><div class="body">📐</div></div>
+ <div class="bot o"><div class="ant"></div><div class="head"><div class="mouth"></div></div><div class="body">💻</div></div>
+ <div class="bot i"><div class="ant"></div><div class="head"><div class="mouth"></div></div><div class="body">🔍</div></div>
+ <div class="bot i"><div class="ant"></div><div class="head"><div class="mouth"></div></div><div class="body">🛡️</div></div>
+</div>
+<div class="desk"><div class="labels"><div class="t">CEO</div><div class="t">Product Manager</div><div class="t">Architect</div><div class="o" style="color:#b45309">Developer</div><div class="i">Reviewer +QA</div><div class="i">SecOps</div></div>
+<p class="foot">Shape → PoC → Increments → Harden — runs through, stops where you choose</p></div>
+</body></html>
