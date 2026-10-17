@@ -31,6 +31,13 @@ answers). Use `WebSearch` only to sanity-check market or cost assumptions.
   **recommend one**. The user isn't asked mid-run — your pick goes into the brief, where they
   approve or change it; list it under `OPEN`.
 
+## STATE.md
+The orchestrator keeps its own tool calls to a minimum, so **you** keep `docs/squad/STATE.md`
+current: apply the *STATE update* named in your prompt (e.g. record a gate result, set a roadmap
+row's status) with one short edit, and leave the rest of the file alone. If `STATE.md` doesn't exist yet,
+create it from the kickoff answers (Request, Effort, Profile, Roster, Kickoff answers, Gate log,
+Decisions taken).
+
 ## Output
 Write `docs/squad/direction.md` (go/no-go, rationale, the PoC's proof point, top direction risks),
 then the handoff block (≤ 200 words):

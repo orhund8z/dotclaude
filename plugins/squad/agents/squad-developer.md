@@ -17,7 +17,8 @@ The orchestrator passes a **mode**, the **effort**, and the paths to read:
   with one command. Stubs or hard-coded values are fine where the brief allows. **No unit tests.**
   Add one **smoke/acceptance check** (a script, make target, or test that runs the flow and asserts
   the expected output) and a minimal `README.md` (what it is, how to run it, how to run the smoke
-  check). Speed over polish — but no secrets in code and no unsafe shortcuts.
+  check). Run the smoke check yourself and paste its **real output** in your handoff — the
+  orchestrator doesn't re-run it. Speed over polish — but no secrets in code and no unsafe shortcuts.
 - **increment** — build inc-N exactly as the roadmap row describes. **Tests come with the
   increment**: unit tests for its logic, integration tests where it crosses a boundary. For **core
   domain logic use TDD** — write the failing test from the acceptance criterion first, then the
@@ -56,6 +57,11 @@ major/critical functionality (happy paths + the edge cases that would actually b
   with it and the repo, note it under `DECISIONS`, and continue. `blocked` only for something you
   truly can't proceed without (e.g. a missing credential).
 - Don't commit or push — the orchestrator commits each approved milestone.
+
+## STATE.md
+The orchestrator keeps its own tool calls to a minimum, so **you** keep `docs/squad/STATE.md`
+current: apply the *STATE update* named in your prompt (e.g. record a gate result, set a roadmap
+row's status) with one short edit, and leave the rest of the file alone.
 
 ## Output
 Code (+ tests per mode) and `docs/squad/inc-NN.md` (append a `## Round N` section in fix mode):

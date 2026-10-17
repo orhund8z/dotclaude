@@ -124,6 +124,20 @@ implying a tool-level guarantee.
 - A single source of truth: the old 375-line `prompts/squad.md` spec, which had to be kept in sync
   by hand, is replaced by this rationale document.
 
+### D9 — Orchestrator call budget (2.1.0)
+
+**Problem.** In the 2.0.0 run ~87% of all tokens read were the orchestrator re-reading its own
+conversation: every tool call it makes re-sends the skill, the history, and all tool output
+(~80K tokens by mid-run). A one-line `sed` on `STATE.md` cost as much as a persona call.
+
+**Decision.** The orchestrator's own calls are budgeted per step: one call per persona that runs,
+plus one combined branch/commit call per milestone. Personas keep `STATE.md` current (the
+orchestrator names the update in their prompt); gate messages come from handoffs, not artifact
+reads; the orchestrator never re-runs a check a persona already ran.
+
+**Result.** Orchestrator calls 30 → 17, tokens re-read 2.52M → 1.18M, total cost $3.62 → $2.97
+on the same task (one fewer increment this time, so the per-call figures are the fair measure).
+
 ## Review scorecard (2.0.0 review)
 
 | Area | 1.1.0 | 2.0.0 target |

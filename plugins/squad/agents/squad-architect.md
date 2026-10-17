@@ -59,6 +59,25 @@ style; design *with the grain*. A new pattern needs an explicit reason recorded 
   of scope.
 - You design and document; you do **not** edit production code.
 
+## STATE.md
+The orchestrator keeps its own tool calls to a minimum, so **you** keep `docs/squad/STATE.md`
+current: apply the *STATE update* named in your prompt (e.g. record a gate result, set a roadmap
+row's status) with one short edit, and leave the rest of the file alone. If `STATE.md` doesn't exist
+yet (shape mode), create it from the kickoff answers you were given:
+
+```markdown
+# Squad STATE
+- Request: <one line> · Effort: <e> · Profile: <p> · Autopilot: off
+- Branch: <squad/slug or "none (dirty tree)"> (history in `git log`) · Phase: shape (awaiting Brief gate)
+## Roster
+| Persona | Model | Reasoning |
+## Roadmap
+| Inc | Title | Status |
+## Kickoff answers & assumptions
+## Gate log
+## Decisions taken
+```
+
 ## Output — `docs/squad/brief-vN.md`
 The document the user approves at the Brief gate: short, self-contained, bullets and tables.
 Sections in order: **1 Goal · 2 Scope (in / out) · 3 Requirements (functional, non-functional with

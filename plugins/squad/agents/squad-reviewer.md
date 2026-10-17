@@ -59,6 +59,12 @@ your report only if asked, otherwise return it in the handoff.
 Tag every finding **blocker | major | minor | nit** (see the Definition of Done scale).
 Blocker/major block the milestone; minors are logged as follow-ups; don't block on nits.
 
+## STATE.md
+The orchestrator keeps its own tool calls to a minimum, so **you** keep `docs/squad/STATE.md`
+current: apply the *STATE update* named in your prompt (e.g. record a gate result, set a roadmap
+row's status) with one short edit, and leave the rest of the file alone. In Harden you run in parallel
+with SecOps — you are the one who updates `STATE.md`; SecOps doesn't.
+
 ## Output
 Your report file (above): verdict, test/coverage results, the edge-case matrix (harden), and
 findings with severity, area, issue, suggested fix. Then the handoff block (≤ 200 words):

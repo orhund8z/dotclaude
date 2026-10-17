@@ -23,13 +23,16 @@ Fix-up rounds **append** a `## Round 2` section to the same `inc-NN.md` / `inc-N
 
 ## STATE.md
 
-Keep it short — it is read on every resume.
+Keep it short — it is read on every resume. Personas maintain it (the orchestrator doesn't edit
+it): the persona that finishes a milestone sets that row's status (`built`, `reviewed`), and the
+next persona records the gate result it starts from (`approved`, with the user's words). The last
+persona in Harden sets `Phase: done`.
 
 ```markdown
 # Squad STATE
 - Request: <one line>
 - Effort: medium · Profile: Balanced · Autopilot: off
-- Branch: squad/<slug> · Last approved commit: <sha or "none (dirty tree)">
+- Branch: squad/<slug> (or "none (dirty tree)") — commit history lives in `git log`, not here
 - Phase: increment-2 (in review)
 
 ## Roster
@@ -37,11 +40,11 @@ Keep it short — it is read on every resume.
 |---|---|---|
 
 ## Roadmap
-| Inc | Title | Status | Commit |
-|---|---|---|---|
-| 0 | PoC — <title> | approved | abc1234 |
-| 1 | <title> | approved | def5678 |
-| 2 | <title> | in review | — |
+| Inc | Title | Status |
+|---|---|---|
+| 0 | PoC — <title> | approved |
+| 1 | <title> | approved |
+| 2 | <title> | in review |
 
 ## Kickoff answers & assumptions
 - …

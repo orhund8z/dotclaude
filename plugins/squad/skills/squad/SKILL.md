@@ -10,18 +10,10 @@ sequence the lifecycle, delegate to persona subagents, run the milestone gates, 
 The shared goal: **ship software that is valuable and loved by customers — the right thing, at the
 right time, with the least waste.**
 
-Three principles drive everything below:
-
-1. **Show working software early.** A thin end-to-end **proof of concept** comes before any
-   layer is built out, so the user can steer the whole flow while change is still cheap.
-2. **Small, approved increments.** After the PoC the work ships in small, demoable increments;
-   each ends at a gate where the user sees the outcome and approves, redirects, or lets the rest
-   run.
-3. **Spend tokens where they change the outcome.** Sonnet by default, Opus only where the profile
-   says so; personas get paths, not pasted context; you read handoffs, not whole artifacts.
-
-The system is **stack-agnostic** — the Architect picks the tech per problem; never default a stack.
-In an existing repo, conform to its conventions (see "Respect the existing repo").
+Principles: **show working software early** (a thin end-to-end PoC before anything is built out);
+**small, approved increments** (each ends at a gate); **spend tokens where they change the
+outcome** (sonnet by default, paths not pasted context, handoffs not artifacts, and your own tool
+calls kept to the budget below). Stack-agnostic: the Architect picks the tech; never default one.
 
 ## Interaction model — questions only at gates
 
@@ -52,7 +44,7 @@ Both are confirmed at kickoff; effort preselects its matching profile.
 
 | Effort | Shape | PoC | Increments | Harden | Profile (default) |
 |---|---|---|---|---|---|
-| **low** | You write a short `brief-v1.md` yourself | The PoC **is** the product | Only if PoC feedback needs a fix-up | None — your quick smoke check | **Fast** |
+| **low** | You write a short `brief-v1.md` (+ `STATE.md`) yourself | The PoC **is** the product | Only if PoC feedback needs a fix-up | None — the Developer's smoke check | **Fast** |
 | **medium** *(default)* | One `squad-architect` call in *shape* mode (scope + design + roadmap) | Thin slice + smoke check | 1–3, each Dev → diff-scoped Review | Light: Reviewer QA pass on critical paths; SecOps only if sensitive | **Balanced** |
 | **high** | `squad-ceo` go/no-go → `squad-product-manager` → `squad-architect` (+ SecOps threat model if sensitive) | Thin slice + smoke check | 2–5, each Dev → diff-scoped Review | Full: Reviewer QA + SecOps in parallel, ADRs, full docs | **Deep** |
 
@@ -78,17 +70,11 @@ Both are confirmed at kickoff; effort preselects its matching profile.
 
 ## Personas (subagents)
 
-| subagent_type | Persona | Runs in |
-|---|---|---|
-| `squad:squad-ceo` | CEO | Shape at `high` only (or when the user asks): go/no-go on direction |
-| `squad:squad-product-manager` | Product Manager | Shape at `high`: scope, acceptance criteria |
-| `squad:squad-architect` | Architect | Shape: design + **roadmap** (PoC + increments) |
-| `squad:squad-developer` | Developer | PoC, each increment, fix-ups, Harden docs/tests |
-| `squad:squad-reviewer` | Reviewer (+ QA) | Each increment (diff-scoped) and Harden (full QA) |
-| `squad:squad-secops` | SecOps | Shape threat model (sensitive designs) and Harden |
-
-The `squad:` prefix is the plugin namespace. If the personas were installed standalone into
-`~/.claude/agents/`, they appear without it — pass `subagent_type` exactly as the Agent tool lists it.
+`squad:squad-ceo` (go/no-go, high only) · `squad:squad-product-manager` (scope, high) ·
+`squad:squad-architect` (design + roadmap) · `squad:squad-developer` (PoC, increments, fixes,
+docs) · `squad:squad-reviewer` (diff review per increment, Harden QA) · `squad:squad-secops`
+(threat model, Harden). The `squad:` prefix is the plugin namespace; if the personas were installed
+standalone into `~/.claude/agents/`, pass `subagent_type` exactly as the Agent tool lists it.
 
 ### Invoking a persona — keep it lean
 
@@ -99,6 +85,8 @@ Subagents start cold. In every call:
 - Give the increment's goal and acceptance criteria by reference (`brief-v2.md#inc-2`).
 - Tell it: *no user questions mid-run — make conservative assumptions, recommend an option for
   each open point, and return them under `OPEN`.*
+- Give it the **STATE update** to apply (see Orchestrator call budget): the gate result it starts
+  from and the roadmap row to set when it finishes. Personas keep `STATE.md` current; you don't.
 - **Run personas in the foreground** (`run_in_background: false`): every next step depends on the
   handoff, and a gate shown after a background notification can be lost from the conversation.
   Independent personas still run in parallel — Harden's Reviewer + SecOps as two foreground calls
@@ -117,9 +105,8 @@ FINDINGS:   <review/security only: {severity, area, issue, fix}>
 NEXT:       <recommended next action>
 ```
 
-Routing: `ok` → advance. `needs-user-decision` → before the Brief gate, fold into the brief; after
-it, decide and log (never a mid-run question unless it is a hard stop). `changes-requested` → back
-to the Developer (bounded, below). `blocked` → work around it, or hard stop.
+Routing: `ok` → advance · `needs-user-decision` → into the brief before its gate, decided and
+logged after it · `changes-requested` → Developer (bounded) · `blocked` → work around, or hard stop.
 
 ## Lifecycle
 
@@ -130,7 +117,9 @@ to the Developer (bounded, below). `blocked` → work around it, or hard stop.
    table for the personas this effort uses; offer *recommended* / *all sonnet* / *Deep* /
    *customise*). Don't ask what the request already answers — state it as an assumption.
 3. Recommend `/model sonnet` or `/model opus` for the session per the profile.
-4. Create `docs/squad/STATE.md` (see `references/artifacts.md`). Read it on entry to resume.
+4. Don't write `STATE.md` yourself: pass the kickoff answers to the first persona (the Architect,
+   or the CEO/PM at high), which creates it. At `low`, write it together with the brief. On
+   entry, read `STATE.md` once if it exists — it is how an interrupted run resumes.
 
 ### 1. Shape — one or two steps
 Produce `docs/squad/brief-v1.md`: goal, scope in/out, requirements, acceptance criteria,
@@ -151,7 +140,8 @@ or roadmap changes: loop back to the Architect (or PM at high), then re-present.
 ### 2. PoC — show the whole flow early
 - `squad-developer` in `poc` mode builds inc-0: end-to-end happy path, **no unit tests**, one
   **smoke/acceptance check** (a script or command that proves the flow works), run instructions.
-- No Reviewer pass on the PoC (it is throwaway-quality by design); you run the smoke check once.
+- No Reviewer pass on the PoC (it is throwaway-quality by design). The Developer runs the smoke
+  check and pastes its real output in the handoff; you don't re-run it.
 - Commit it (see Git). **PoC gate.** Feedback is cheap here — "redo PoC" or "reshape roadmap" both
   loop back without cost to tested code. At `low` effort the PoC is the product: after approval,
   write the final report.
@@ -166,7 +156,7 @@ For each increment in roadmap order:
    code conforms to the repo. Writes `inc-NN-review.md`.
 3. Blocker/major findings → back to the Developer. **At most 2 Dev↔Review rounds per increment**;
    leftovers are listed at the gate, not asked about mid-run.
-4. Commit, update `STATE.md`, then the **increment gate** (unless autopilot).
+4. Commit (one call, see Git), then the **increment gate** (unless autopilot).
 
 "Redirect" at a gate: apply small feedback as a fix-up round in the same increment; for scope or
 direction changes, revise the roadmap (`brief-v(N+1).md`) before continuing.
@@ -187,32 +177,52 @@ Shape as a new roadmap revision — don't restart.
 
 ## Testing strategy — hybrid
 
-| Stage | Tests | Why |
-|---|---|---|
-| PoC | One smoke/acceptance check only | Don't write tests for an app that may still change direction |
-| Each increment | Unit + integration tests **with** the increment; TDD for core logic | Tests are cheapest while the code is fresh; defects don't accumulate |
-| Harden | Edge-case matrix, end-to-end flows, coverage bar, security | Cross-cutting checks that only make sense on the whole system |
-
-At `low` effort there are no automated tests beyond the PoC smoke check.
+PoC: one smoke/acceptance check, no unit tests — don't test an app that may still change direction.
+Each increment: unit + integration tests **with** it, TDD for core logic — cheapest while the code
+is fresh. Harden: edge-case matrix, end-to-end flows, coverage bar, security — the cross-cutting
+checks that only make sense on the whole system. At `low` effort: the PoC smoke check only.
 
 ## Git — one rollback point per milestone
 
-If the project is a git repo with a clean working tree: at the PoC, create a local branch
-`squad/<short-slug>` (unless already on a non-default branch), then **commit once per completed
-milestone** — `squad: inc-0 PoC — <title>`, `squad: inc-N — <title>`, `squad: harden`. Fold
-`STATE.md` updates into the next milestone commit; no separate state-only commits. Never push,
-never rewrite history, never touch other branches. If the tree is dirty at kickoff, don't commit at
-all; say so in the kickoff message and track milestones in `STATE.md` only.
+If the project is a git repo with a clean working tree, each milestone is **one Bash call**:
 
-## Cost discipline
+```bash
+git switch -c squad/<short-slug> 2>/dev/null || true   # first milestone only; no-op afterwards
+git add -A && git commit -q -m "squad: inc-N — <title>" && git rev-parse --short HEAD
+```
 
-- Read persona **handoff blocks**, not their artifacts; open an artifact only to resolve a
-  conflict or to build a gate summary the handoff doesn't cover.
-- Don't redo a persona's work: at medium/high you never re-run the suite yourself — the Reviewer
-  did. Your own checks are limited to the PoC smoke check and the low-effort sanity check.
+Messages: `squad: inc-0 PoC — <title>`, `squad: inc-N — <title>`, `squad: harden`. The personas'
+`STATE.md` edits ride along in the same commit; there are no state-only commits. Never push, never
+rewrite history, never touch other branches. If the tree is dirty at kickoff, don't commit at all;
+say so in the kickoff message and track milestones in `STATE.md` only.
+
+## Orchestrator call budget
+
+Every tool call you make re-sends the whole conversation (skill, history, tool output), so one
+`sed` on `STATE.md` costs as much as reading the entire run so far. Persona calls are cheap by
+comparison: they start from a small, fresh context. Hold yourself to this budget:
+
+| Step | Your calls |
+|---|---|
+| Kickoff | 0–1 (a quick look at the repo, if there is one), then the question batch |
+| Shape | 1 per persona that runs (1 at medium) |
+| PoC | 1 Developer call + 1 commit call |
+| Each increment | 1 Developer + 1 Reviewer call (+ 2 per fix round) + 1 commit call |
+| Harden | 1 Reviewer call (+ SecOps in the same message) + 1 Developer call (+ re-check) + 1 commit call |
+
+So, concretely:
+- **No reading artifacts** to build a gate message — the handoff carries what the gate needs. Open
+  a file only to resolve a conflict between personas.
+- **No `STATE.md` edits of your own.** In each persona call, name the STATE update for it to apply:
+  e.g. *"First record in STATE.md: PoC approved (user: 'looks good'). When done, set inc-1 to 'in
+  review'."* The persona finishing a milestone marks its row; the last one in Harden sets
+  `Phase: done`. In Harden's parallel pair, only the Reviewer edits `STATE.md`. Commit SHAs live in
+  `git log`, not in `STATE.md` — you pass the last approved SHA to the Reviewer yourself.
+- **No re-running** builds, tests, or smoke checks a persona already ran and reported.
+- **No exploratory calls** (`ls`, `cat`, `grep`) once Shape has started; ask the next persona to
+  check instead, as part of its call.
 - One brief, one file per increment (`inc-NN.md` + `inc-NN-review.md`); fix-up rounds append a
   section instead of creating new versions.
-- Keep `STATE.md` short; it is the resume point, not a log of everything.
 
 ## Respect the existing repo — explore before you generate
 

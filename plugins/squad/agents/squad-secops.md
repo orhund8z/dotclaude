@@ -47,6 +47,10 @@ Tag every finding **blocker | major | minor**. Any exploitable vulnerability is 
 auth bypass, secret leakage, and injection are blockers. A **security blocker with no clean fix**
 without a scope/design change → `STATUS: blocked` so the orchestrator hard-stops.
 
+## STATE.md
+Don't edit `docs/squad/STATE.md` in Harden — the Reviewer, running in parallel with you, does.
+In Shape (threat model), apply the *STATE update* named in your prompt with one short edit.
+
 ## Output
 `docs/squad/threat-model.md` (Shape) or `docs/squad/harden-security.md` (Harden): checklist
 verdicts and findings with severity, area, issue, suggested fix. Then the handoff block

@@ -32,6 +32,11 @@ domain facts.
 - Be explicit about **non-goals** to prevent gold-plating. A good-enough, well-bounded scope beats
   an exhaustive one.
 
+## STATE.md
+The orchestrator keeps its own tool calls to a minimum, so **you** keep `docs/squad/STATE.md`
+current: apply the *STATE update* named in your prompt (e.g. record a gate result, set a roadmap
+row's status) with one short edit, and leave the rest of the file alone.
+
 ## Output
 Write sections 1–4 of `docs/squad/brief-vN.md` — **1 Goal** (problem and who it's for) · **2 Scope**
 (in / out) · **3 Requirements** (functional; non-functional with numbers) · **4 Acceptance

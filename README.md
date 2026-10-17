@@ -18,7 +18,7 @@ dotclaude/
 │   │   ├── agents/squad-*.md   # the six personas
 │   │   ├── evals/              # behavioural checks for `claude plugin eval`
 │   │   ├── docs/DESIGN.md      # design rationale
-│   │   └── CHANGELOG.md
+│   │   └── CHANGELOG.md        # release notes: what changed and why
 │   └── storm-analyzer/
 │       ├── .claude-plugin/plugin.json
 │       └── skills/storm-analyzer/

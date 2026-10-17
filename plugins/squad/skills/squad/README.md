@@ -263,8 +263,8 @@ See the repo root [README](../../../../README.md#installation) for details.
 
 - **Source of truth:** this `SKILL.md`, `references/`, and the agent files in `../../agents/`.
   The design rationale (why PoC-first, hybrid testing, sonnet by default) is in
-  [`docs/DESIGN.md`](../../docs/DESIGN.md); changes are listed in the
-  [CHANGELOG](../../CHANGELOG.md).
+  [`docs/DESIGN.md`](../../docs/DESIGN.md); every change and the reason for it is in the
+  [release notes](../../CHANGELOG.md) — add an entry with each change.
 - **Evals:** behavioural checks live in [`../../evals/`](../../evals/). Run them with
   `claude plugin eval plugins/squad` (each case starts real squad runs, so it costs tokens).
 - **Images:** `images/*.png` are rendered from `images/src/*.html` with `node images/src/render.mjs`;
