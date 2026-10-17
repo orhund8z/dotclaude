@@ -6,7 +6,7 @@ All lifecycle artifacts live under `docs/squad/` in the project being built. Dur
 ```
 docs/squad/
 ├── STATE.md               # the resume point: effort, roster, roadmap status, stop log, decisions
-├── direction.md           # high effort only: CEO go/no-go
+├── direction.md           # full team only: CEO go/no-go
 ├── brief-v1.md            # scope + design + roadmap — the plan of record (shown at the `brief` stop, if chosen)
 ├── brief-v2.md            # only when scope/roadmap changes; never overwrite an approved version
 ├── threat-model.md        # Shape, security/data-sensitive designs only (SecOps)
@@ -33,7 +33,7 @@ items** (removing them when fixed) — a resumed run has no handoff to read them
 ```markdown
 # Squad STATE
 - Request: <one line>
-- Effort: medium · Profile: Balanced · Stops: brief, build-complete (or none)
+- Effort: medium · Team: lean · Profile: Balanced · Stops: brief, build-complete (or none)
 - Branch: squad/<slug> (or "none (dirty tree)") — commit history lives in `git log`, not here
 - Phase: increment-2 (in review)
 

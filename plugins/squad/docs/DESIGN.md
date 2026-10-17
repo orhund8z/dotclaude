@@ -92,7 +92,7 @@ where the user trusts the direction.
 get paths, not pasted content; the Reviewer reviews only the increment's diff; the orchestrator no
 longer re-runs checks the Reviewer already ran.
 
-### D5 — Fewer cold starts at medium (2.0.0)
+### D5 — Fewer cold starts at medium (2.0.0; the line-up is a separate knob since D11)
 
 **Decision.** At medium effort a single Architect call writes scope, design, and roadmap. PM and
 CEO run only at high effort (CEO also on request).
@@ -151,6 +151,18 @@ it and show me the code". Pausing also had no defined way back in.
 
 **Why.** The user decides the trade-off between supervision and speed per run, once. Stops cost
 nothing when not chosen, and parking turns `STATE.md` from a log into an actual resume point.
+
+### D11 — Effort, team, and profile are independent (2.3.0, refines D5)
+
+**Problem.** D5 tied the persona line-up to effort: CEO and PM ran only at `high`. Users wanted the
+full SDLC company (CEO, PM, Architect, SecOps) at medium depth and on cheaper models.
+
+**Decision.** Three orthogonal knobs: **effort** (how deep: increments, tests, docs), **team**
+(`lean` or `full`: who runs), **profile** (which models). Every profile defines all six personas.
+Effort preselects the usual team and profile; any combination is allowed.
+
+**Why.** Each knob answers a different question — how thorough, how many perspectives, how much
+model per perspective — and coupling them forced users to over-buy one to get another.
 
 ## Review scorecard (2.0.0 review)
 

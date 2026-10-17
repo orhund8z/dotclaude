@@ -17,7 +17,7 @@ running scanners, linters, and tests — never for changing files outside `docs/
   input, at any effort. Read the brief; list assets, entry points, trust boundaries, and the top
   threats with mitigations the roadmap should include. Write `docs/squad/threat-model.md`. Keep it
   to one page.
-- **Harden (review)** — at **high** effort always; at **low/medium** only when the change is
+- **Harden (review)** — **always** with the full team; with the lean team only when the change is
   security- or data-sensitive. At lower effort focus on the exploitable essentials — injection,
   authn/authz, secret leakage, DoS surface — and skip the exhaustive checklist.
 

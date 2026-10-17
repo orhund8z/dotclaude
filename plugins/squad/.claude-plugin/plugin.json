@@ -1,6 +1,6 @@
 {
   "name": "squad",
-  "version": "2.2.1",
+  "version": "2.3.0",
   "description": "Incremental software development lifecycle (Shape → PoC → Increments → Harden) run by a squad of specialised subagents — PM, Architect, Developer, Reviewer, SecOps, and a CEO at high effort. Runs straight through by default; stops only where you choose at kickoff, and a parked run resumes later.",
   "author": {
     "name": "Orhun Dalabasmaz"

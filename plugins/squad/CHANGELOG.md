@@ -16,10 +16,33 @@ Keep it to one or two lines; link a DESIGN.md decision for anything larger.
 | 1.0.0 | Six-persona SDLC | Analyze → Plan → Dev → Review → Monitor | Many ad-hoc questions | PM/Architect opus, rest sonnet | — |
 | 1.1.0 | Ask once, then run | same | 2 (kickoff, plan) | CEO + PM + Architect opus | $3.50, 91% Opus, 12 tests |
 | 2.0.0 | Incremental delivery | Shape → PoC → Increments → Harden | kickoff + Brief + PoC + each increment | sonnet; opus only in Deep profile | $4.23 all Sonnet, 58 tests, 6 commits |
+| 2.3.0 | Team is its own knob | same | same | every profile covers all six personas | medium + full team + Balanced: Shape $0.49 |
 | 2.2.0 | Run through, stop where chosen | same | kickoff + only the stop points you pick (default none); park & resume | same | $2.24 all Sonnet, 28 tests, 97% coverage — incl. park + resume in a new session |
 | 2.1.0 | Lean orchestrator | same | same | same | $2.97 all Sonnet, 46 tests, 3 commits; orchestrator calls −43% |
 
 \* Same task each time: a small Celsius ↔ Fahrenheit CLI, medium effort, headless run.
+
+## 2.3.0
+
+- **Team is a third knob, independent of effort and profile** — which personas ran was tied to
+  effort (CEO and PM only at `high`), so "the whole SDLC company on Balanced models" wasn't
+  possible. Now `lean` (Architect plans alone; SecOps only if sensitive) or `full` (CEO → PM →
+  Architect; SecOps always in Harden) can be combined with any effort and any profile. Effort still
+  preselects: low/medium → lean, high → full. Kickoff asks it inside the effort question, so the
+  batch stays at four questions.
+- **Every profile now covers every persona** — Fast and Balanced had "—" for the CEO and PM (and
+  Fast for the Architect, Reviewer, SecOps), so a full team on those profiles had no defined
+  models. Fast: all Sonnet with low/medium reasoning; Balanced: all Sonnet, CEO medium, PM and
+  Architect high.
+- **Persona depth follows effort, not team** — a full team at medium effort writes lean acceptance
+  criteria and one recommended design option; ADRs, option matrices and the non-functional plan
+  stay at high.
+- **README explains the model/reasoning split** — the profiles are often read as "Fast = haiku,
+  Balanced = sonnet, Deep = opus"; the README now shows the full persona × profile table and that
+  Deep puts Opus only on planning personas.
+
+Tested: medium effort + full team + Balanced, stop at `brief` — CEO (sonnet/medium), PM
+(sonnet/high), Architect (sonnet/high) ran in order and the run stopped at the brief; $0.49.
 
 ## 2.2.1
 

@@ -80,14 +80,15 @@ it in your request and kickoff won't ask it again.
 | Option | Values | Default | When it's decided |
 |---|---|---|---|
 | **Effort** — how much gets built, how heavy the process is | `low` · `medium` · `high` | `medium` (`low` is recommended for tiny jobs) | Kickoff, or in the request ("low effort", "quick", "production-grade") |
+| **Team** — which personas run | `lean` (Architect plans alone) · `full` (CEO → PM → Architect, SecOps always in Harden) | The one matching the effort: low/medium → lean, high → full | Kickoff (part of the effort question), or in the request ("full team") |
 | **Model profile** — which model and reasoning each persona uses | `Fast` · `Balanced` · `Deep` · *all sonnet* · *customise* | The one matching the effort: low → Fast, medium → Balanced, high → Deep | Kickoff; can change at any stop |
 | **Per-persona override** | any persona → `sonnet` / `opus` / `haiku` + reasoning `low` … `max` | — | Kickoff ("customise") or at a stop, e.g. "Developer on opus/high" |
 | **Stop points** — where it pauses and waits for you | any of `brief` · `poc` · `each-increment` · `build-complete` | none — runs straight through | Kickoff, or in the request ("stop after the PoC"); can change at any stop |
 | **Clarifications** — scope and design questions | your answers, or "use your assumptions" | the stated assumptions | Kickoff |
 | **Session model** — the orchestrator itself | `/model sonnet` · `/model opus` | whatever your session runs | You, before or at kickoff (the skill recommends one) |
 
-What the effort levels and profiles mean in detail is in [Effort and model profiles](#effort-and-model-profiles)
-below.
+What the effort levels, teams, and profiles mean in detail is in
+[Effort, team, and model profile](#effort-team-and-model-profile) below.
 
 ### At a stop point you can answer
 
@@ -124,6 +125,12 @@ Assemble the squad to build a URL shortener service. Stop at build-complete.
 # Supervise every step
 Assemble the squad, medium effort, stop after the PoC and after each increment: …
 
+# The whole SDLC company (CEO, PM, Architect, SecOps) on Balanced models, medium depth
+Assemble the squad, medium effort, full team, Balanced profile: …
+
+# Medium depth, Opus for planning
+Assemble the squad, medium effort, Deep profile: …
+
 # Production-grade, strongest models where it matters
 Assemble the squad, high effort, Deep profile, stop after the brief: a payments webhook service.
 
@@ -146,26 +153,45 @@ Resume the squad.
   allowlist in your settings can override the chosen models; the skill reports it if that happens.
 - **It never pushes** — the final report lists push / PR / release as next steps for you.
 
-## Effort and model profiles
+## Effort, team, and model profile
 
-**Effort** decides how much gets built and how heavy the process is. Each effort comes with a
-default **model profile**; you can pick another, or override single personas, at kickoff or at any
-stop point.
+Three independent knobs — combine them freely (e.g. `medium` effort + `full` team + `Balanced`
+profile). Effort only *preselects* its usual team and profile; change either at kickoff, in your
+request, or at any stop point.
 
-| Effort | Shape | PoC | Increments | Harden | Default profile |
-|---|---|---|---|---|---|
-| **low** | Orchestrator writes a short brief | The PoC **is** the product | Only for PoC feedback | None (smoke check) | Fast |
-| **medium** *(default)* | One Architect call: scope + design + roadmap | Thin slice + smoke check | 1–3, diff-reviewed | Reviewer QA on critical paths; SecOps if sensitive | Balanced |
-| **high** | CEO → PM → Architect (+ threat model if sensitive) | Thin slice + smoke check | 2–5, diff-reviewed | Reviewer + SecOps in parallel, ADRs, full docs | Deep |
+**Effort** — how much gets built and how heavy the process is:
+
+| Effort | PoC | Increments | Harden | Usual team · profile |
+|---|---|---|---|---|
+| **low** | The PoC **is** the product | Only for PoC feedback | None (smoke check) | lean · Fast |
+| **medium** *(default)* | Thin slice + smoke check | 1–3, diff-reviewed | Reviewer QA on critical paths | lean · Balanced |
+| **high** | Thin slice + smoke check | 2–5, diff-reviewed | Reviewer QA + edge-case matrix, ADRs, full docs | full · Deep |
+
+**Team** — which personas run:
+
+| Team | Shape (planning) | SecOps |
+|---|---|---|
+| **lean** | One Architect call writes scope + design + roadmap (at `low` effort the orchestrator writes a short brief itself) | Only if the work is security/data-sensitive |
+| **full** — the whole SDLC company | CEO go/no-go → Product Manager (scope, acceptance criteria) → Architect (design + roadmap) | Always reviews in Harden; threat model in Shape if sensitive |
+
+**Model profile** — model / reasoning per persona. Every profile covers every persona, so any team
+works with any profile:
 
 | Persona | Fast | Balanced *(default)* | Deep |
 |---|---|---|---|
-| CEO | — | — | `opus` / `medium` |
-| Product Manager | — | — | `opus` / `high` |
-| Architect | — | `sonnet` / `high` | `opus` / `high` |
+| CEO | `sonnet` / `low` | `sonnet` / `medium` | `opus` / `medium` |
+| Product Manager | `sonnet` / `medium` | `sonnet` / `high` | `opus` / `high` |
+| Architect | `sonnet` / `medium` | `sonnet` / `high` | `opus` / `high` |
 | Developer | `sonnet` / `low` | `sonnet` / `medium` | `sonnet` / `high` |
-| Reviewer | — | `sonnet` / `medium` | `sonnet` / `high` |
-| SecOps | — | `sonnet` / `medium` | `sonnet` / `high` |
+| Reviewer | `sonnet` / `low` | `sonnet` / `medium` | `sonnet` / `high` |
+| SecOps | `sonnet` / `low` | `sonnet` / `medium` | `sonnet` / `high` |
+
+Two separate settings per row: the **model** (which Claude) and the **reasoning** (how hard that
+model thinks). The profiles are *not* "Fast = haiku, Balanced = sonnet, Deep = opus": Fast is
+Sonnet thinking less, Balanced is all Sonnet, and Deep puts Opus only on the planning personas —
+the code is always written and reviewed by Sonnet. `haiku` is never used by default; you can
+assign it per persona ("customise"). The aliases resolve to the current models — in our test runs
+`sonnet` → `claude-sonnet-5-5` and `opus` → `claude-opus-5-5`.
 
 **Why sonnet by default:** in a measured medium-effort run on the previous version, Opus made up
 ~91% of the cost, and most of that was the orchestrator and the planning personas — the actual
@@ -174,8 +200,8 @@ where scope and architecture mistakes are the most expensive. The orchestrator r
 session model, so the skill suggests `/model sonnet` (Fast/Balanced) or `/model opus` (Deep) at
 kickoff.
 
-High-risk work (auth, payments, PII, data loss) gets a recommendation for `high` effort or the Deep
-profile, and a SecOps pass regardless of effort.
+High-risk work (auth, payments, PII, data loss) gets a recommendation for `high` effort, the full
+team, or the Deep profile, and a SecOps pass regardless of effort or team.
 
 ## Testing — hybrid, so you never test the wrong app
 
