@@ -21,6 +21,14 @@ Keep it to one or two lines; link a DESIGN.md decision for anything larger.
 
 \* Same task each time: a small Celsius ↔ Fahrenheit CLI, medium effort, headless run.
 
+## 2.2.1
+
+- **README "How to use — every option"** — the options (effort, model profile, per-persona
+  overrides, stop points, clarifications, session model), the answers at a stop, park/resume, and
+  the behaviours that change without asking were spread across the README and only discoverable by
+  reading the skill. One section now lists every choice with its values, default, and when it's
+  decided, plus copy-paste recipes. Clarifies that there is no config file.
+
 ## 2.2.0
 
 - **Runs straight through by default** — 2.0.0/2.1.0 stopped at every milestone (Brief, PoC, each

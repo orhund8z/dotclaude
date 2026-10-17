@@ -69,6 +69,83 @@ flowchart TD
 
 With no stop points chosen, each ⏸ is passed straight through.
 
+## How to use — every option
+
+There is **no config file**. Everything is chosen in the conversation: at kickoff (one question
+batch, each with a recommended default), in the wording of your request, or at a stop point. Say
+it in your request and kickoff won't ask it again.
+
+### What you can choose
+
+| Option | Values | Default | When it's decided |
+|---|---|---|---|
+| **Effort** — how much gets built, how heavy the process is | `low` · `medium` · `high` | `medium` (`low` is recommended for tiny jobs) | Kickoff, or in the request ("low effort", "quick", "production-grade") |
+| **Model profile** — which model and reasoning each persona uses | `Fast` · `Balanced` · `Deep` · *all sonnet* · *customise* | The one matching the effort: low → Fast, medium → Balanced, high → Deep | Kickoff; can change at any stop |
+| **Per-persona override** | any persona → `sonnet` / `opus` / `haiku` + reasoning `low` … `max` | — | Kickoff ("customise") or at a stop, e.g. "Developer on opus/high" |
+| **Stop points** — where it pauses and waits for you | any of `brief` · `poc` · `each-increment` · `build-complete` | none — runs straight through | Kickoff, or in the request ("stop after the PoC"); can change at any stop |
+| **Clarifications** — scope and design questions | your answers, or "use your assumptions" | the stated assumptions | Kickoff |
+| **Session model** — the orchestrator itself | `/model sonnet` · `/model opus` | whatever your session runs | You, before or at kickoff (the skill recommends one) |
+
+What the effort levels and profiles mean in detail is in [Effort and model profiles](#effort-and-model-profiles)
+below.
+
+### At a stop point you can answer
+
+| Answer | What happens |
+|---|---|
+| **continue** | Carries on to the next stop point, or to the end |
+| **redirect** + your feedback | Small change: a fix-up round. Scope/direction change: a revised roadmap (`brief-v2.md`). Then continues |
+| **change stop points** | e.g. "no more stops" (run to the end) or "also stop before Harden" |
+| **harden now** | Skips the remaining increments and goes to Harden |
+| **park** | Saves the state (`docs/squad/STATE.md` + a commit) and ends the session cleanly |
+
+### Park and resume
+
+Park at any stop, close the session, come back later — the same day or a week later — and say
+**"resume the squad"** in the same repo. It reads `docs/squad/STATE.md`, checks out the
+`squad/<slug>` branch, and shows you the stop it was parked at, without asking the kickoff
+questions again. Everything built so far is committed on that branch.
+
+### Recipes
+
+```text
+# Small and fast — brief, PoC = product, no tests or review
+Assemble the squad, low effort: a script that renames photos by EXIF date.
+
+# The default — runs straight through to a tested, reviewed result
+Assemble the squad to build a URL shortener service.
+
+# Look at the plan before any code is written
+Assemble the squad to build a URL shortener service. Stop after the brief.
+
+# Just write the code and show me — decide on hardening afterwards
+Assemble the squad to build a URL shortener service. Stop at build-complete.
+
+# Supervise every step
+Assemble the squad, medium effort, stop after the PoC and after each increment: …
+
+# Production-grade, strongest models where it matters
+Assemble the squad, high effort, Deep profile, stop after the brief: a payments webhook service.
+
+# Custom staffing
+… Balanced profile, but Developer on opus/high.
+
+# Pick up a parked run
+Resume the squad.
+```
+
+### Things that change behaviour without asking
+
+- **Dirty working tree at kickoff** → it doesn't commit at all and says so; milestones are tracked
+  in `STATE.md` only. Commit or stash first if you want a rollback point per milestone.
+- **High-risk work** (auth, payments, PII, data loss, irreversible migrations) → it recommends
+  `high` effort or the Deep profile, the `brief` stop, and runs SecOps regardless of effort.
+- **Hard stops** → it interrupts outside your stop points only for a missing credential/access, an
+  irreversible action the brief didn't cover, or a security blocker with no in-scope fix.
+- **Environment overrides** → `CLAUDE_CODE_SUBAGENT_MODEL_FORCE=1` or an `availableModels`
+  allowlist in your settings can override the chosen models; the skill reports it if that happens.
+- **It never pushes** — the final report lists push / PR / release as next steps for you.
+
 ## Effort and model profiles
 
 **Effort** decides how much gets built and how heavy the process is. Each effort comes with a
