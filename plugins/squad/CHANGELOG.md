@@ -37,6 +37,9 @@ Keep it to one or two lines; link a DESIGN.md decision for anything larger.
 - **Persona depth follows effort, not team** — a full team at medium effort writes lean acceptance
   criteria and one recommended design option; ADRs, option matrices and the non-functional plan
   stay at high.
+- **README explains why reasoning differs per persona** — reasoning follows how expensive a
+  persona's mistake is: PM and Architect (everything builds on their output) one notch up, the CEO
+  (short go/no-go, correctable downstream) one notch down, the checked-downstream roles at base.
 - **README explains the model/reasoning split** — the profiles are often read as "Fast = haiku,
   Balanced = sonnet, Deep = opus"; the README now shows the full persona × profile table and that
   Deep puts Opus only on planning personas.

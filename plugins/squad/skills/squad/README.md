@@ -193,6 +193,15 @@ the code is always written and reviewed by Sonnet. `haiku` is never used by defa
 assign it per persona ("customise"). The aliases resolve to the current models — in our test runs
 `sonnet` → `claude-sonnet-5-5` and `opus` → `claude-opus-5-5`.
 
+**Why the levels differ within a profile:** reasoning follows how expensive a persona's mistake is.
+The **PM and Architect** write the scope, acceptance criteria, architecture and roadmap that every
+later step builds on — a mistake there spreads into every increment, test and review — so they sit
+one notch above the rest in every profile. The **CEO** writes a short go/no-go; it needs judgment
+more than long reasoning, and the PM, the Architect and the `brief` stop can still correct it, so
+it sits one notch lower. The **Developer, Reviewer and SecOps** are checked downstream (tests,
+review, Harden), so they follow the profile's base level. These are judgment-based defaults, not
+measured ones — override any persona at kickoff or a stop ("CEO on sonnet/medium").
+
 **Why sonnet by default:** in a measured medium-effort run on the previous version, Opus made up
 ~91% of the cost, and most of that was the orchestrator and the planning personas — the actual
 building and reviewing on sonnet cost $0.31 of $3.50. Opus is now reserved for the Deep profile,
