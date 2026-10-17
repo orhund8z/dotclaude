@@ -20,3 +20,6 @@ skills/job-tracker/reports/
 skills/ats-job-scan/config.json
 skills/ats-job-scan/local.json
 skills/ats-job-scan/reports/
+
+# claude plugin eval output
+plugins/*/evals/results/

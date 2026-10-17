@@ -1,0 +1,43 @@
+name: Validate plugins
+
+on:
+  pull_request:
+    paths:
+      - ".claude-plugin/**"
+      - "plugins/**"
+      - "skills/**"
+      - "scripts/check_plugins.py"
+      - "README.md"
+      - ".github/workflows/validate-plugins.yml"
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Static checks (manifests, frontmatter, eval cases, links)
+        run: |
+          pip install pyyaml
+          python3 scripts/check_plugins.py
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: claude plugin validate
+        run: |
+          npm install -g @anthropic-ai/claude-code
+          claude plugin validate .
+          for plugin in plugins/*/; do
+            claude plugin validate "$plugin"
+          done

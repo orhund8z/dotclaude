@@ -1,0 +1,29 @@
+<!doctype html><html><head><meta charset="utf-8"><link rel="stylesheet" href="_base.css"><style>
+body{width:1160px;height:560px;padding:26px 26px 0}
+h1{font-size:30px;margin-top:4px}.sub{font-size:14px;margin-top:6px}
+.row{display:flex;gap:12px;margin-top:34px}
+.card{flex:1;background:#fff;border-radius:12px;box-shadow:0 2px 6px rgba(0,0,0,.08);height:322px;text-align:center;border-top:6px solid var(--c);padding:22px 10px 0;position:relative}
+.ic{width:62px;height:62px;border-radius:50%;background:var(--cb);margin:4px auto 0;display:flex;align-items:center;justify-content:center;font-size:30px}
+.name{font-weight:700;font-size:17px;margin-top:16px}
+.what{color:var(--muted);font-size:11.5px;line-height:1.45;margin-top:8px;height:34px}
+.when{font-size:10.5px;color:var(--ink);margin-top:10px;font-weight:600}
+.model{display:inline-block;margin-top:10px;padding:5px 12px;border-radius:14px;font-size:11px;font-weight:700;background:#eef0f3;color:#4b5563}
+.model b{color:#6d28d9}
+.priv{position:absolute;bottom:22px;left:0;right:0;font-size:11.5px;font-weight:700;color:var(--c)}
+.t{--c:var(--teal);--cb:var(--teal-bg)}.o{--c:#d97706;--cb:var(--orange-bg)}.i{--c:var(--indigo);--cb:var(--indigo-bg)}
+.legend{display:flex;justify-content:space-between;align-items:center;border-top:1px solid #e5e2da;margin-top:30px;padding-top:14px;font-size:12px;color:#374151}
+.legend span i{display:inline-block;width:11px;height:11px;border-radius:2px;margin-right:6px;vertical-align:-1px}
+.legend em{color:var(--muted);font-size:11.5px}
+</style></head><body>
+<h1>The squad — six specialists, one goal</h1>
+<p class="sub">See it working early, approve every step — each persona challenges the others with evidence</p>
+<div class="row">
+ <div class="card t"><div class="ic">👔</div><div class="name">CEO</div><div class="what">Go / no-go · value · cost<br>what the PoC must prove</div><div class="when">Shape · high effort only</div><div class="model">Deep: <b>opus</b></div><div class="priv">writes docs · no code</div></div>
+ <div class="card t"><div class="ic">📋</div><div class="name">Product Manager</div><div class="what">Scope · what NOT to build<br>acceptance criteria</div><div class="when">Shape · high effort</div><div class="model">Deep: <b>opus</b></div><div class="priv">writes docs · no code</div></div>
+ <div class="card t"><div class="ic">📐</div><div class="name">Architect</div><div class="what">Stack · design<br>PoC + increment roadmap</div><div class="when">Shape · reshape</div><div class="model">sonnet · Deep: <b>opus</b></div><div class="priv">writes docs · no code</div></div>
+ <div class="card o"><div class="ic">💻</div><div class="name">Developer</div><div class="what">PoC · increments · fixes<br>tests with each increment</div><div class="when">PoC · increments · harden</div><div class="model">sonnet</div><div class="priv">the only code editor</div></div>
+ <div class="card i"><div class="ic">🔍</div><div class="name">Reviewer +QA</div><div class="what">Diff review per increment<br>edge-case matrix in Harden</div><div class="when">increments · harden</div><div class="model">sonnet</div><div class="priv">reports · no source edits</div></div>
+ <div class="card i"><div class="ic">🛡️</div><div class="name">SecOps</div><div class="what">Threat model · injection<br>authz · secrets · DoS</div><div class="when">shape (sensitive) · harden</div><div class="model">sonnet</div><div class="priv">reports · no source edits</div></div>
+</div>
+<div class="legend"><span><i style="background:var(--teal)"></i>shape (no code)</span><span><i style="background:var(--orange)"></i>build (edits code)</span><span><i style="background:var(--indigo)"></i>review (reports, never edits)</span><em>sonnet by default — opus only where the Deep profile puts it</em></div>
+</body></html>

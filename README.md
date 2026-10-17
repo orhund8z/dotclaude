@@ -1,6 +1,6 @@
 # dotclaude
 
-Personal AI toolkit — Claude skills, prompts, and automation workflows.
+Personal AI toolkit — Claude skills, plugins, and automation workflows.
 
 ## Structure
 
@@ -14,8 +14,11 @@ dotclaude/
 │   │   └── skills/job-evaluator/   # SKILL.md, SETUP.md, PROFILE.example.md
 │   ├── squad/
 │   │   ├── .claude-plugin/plugin.json
-│   │   ├── skills/squad/       # orchestrator skill
-│   │   └── agents/squad-*.md   # the six personas
+│   │   ├── skills/squad/       # orchestrator skill (+ references/, images/)
+│   │   ├── agents/squad-*.md   # the six personas
+│   │   ├── evals/              # behavioural checks for `claude plugin eval`
+│   │   ├── docs/DESIGN.md      # design rationale
+│   │   └── CHANGELOG.md
 │   └── storm-analyzer/
 │       ├── .claude-plugin/plugin.json
 │       └── skills/storm-analyzer/
@@ -24,7 +27,8 @@ dotclaude/
 │   ├── atlas/
 │   ├── job-tracker/
 │   └── mcp-builder/
-├── prompts/         # Reusable prompt templates
+├── scripts/         # repo tooling (check_plugins.py — run by CI)
+├── .github/workflows/  # CI: plugin validation
 └── docs/            # Notes, setup guides, decisions
 ```
 
@@ -38,7 +42,7 @@ Skills are modular instruction packages for [Claude Code](https://docs.anthropic
 | [job-tracker](./skills/job-tracker/) | Watches a configured company list for openings that match your profile, and discovers other companies working on your topics that are hiring. Produces a self-contained HTML report in two groups — **Tracked** and **Suggested** — with `🆕` badges for postings new since the previous run. | 🇬🇧 English |
 | [ats-job-scan](./skills/ats-job-scan/) | Company-agnostic job radar: discovers thousands of Ashby and Greenhouse job boards (Common Crawl + local seeds), fetches them through the public APIs with per-host rate limiting, keeps Munich (any work model) or remote-Germany/Europe/worldwide roles, scores fit (title, skills, stated pay vs. threshold, freshness, penalties) and writes a **dated markdown report** with `🆕` for postings new since the last scan. Standard-library Python; `--rescore` re-tunes filters in seconds. | 🇬🇧 English |
 | [mcp-builder](./skills/mcp-builder/) | Scaffolds and implements TypeScript MCP servers — shared repo layout, tool-surface design, idempotency/conflict gating, tool annotations, resilience/cost guardrails, low/medium/high effort modes, existing-convention matching, and mandatory smoke-test verification (+ committed test suite at medium/high). Can delegate implementation/review to the `squad-*` subagents. | 🇬🇧 English |
-| [squad](./plugins/squad/skills/squad/) | Runs a full software development lifecycle (Analyze → Plan → Dev → Monitor) as a six-persona software company; orchestrates the `squad-*` subagents. Stack-agnostic, with low/medium/high effort modes, per-persona model/reasoning roster, ask-once-then-run interaction (one kickoff question batch + one plan approval), explore-the-existing-repo-first discipline, and durable `README.md`/`SPEC.md` deliverables. | 🇬🇧 English |
+| [squad](./plugins/squad/skills/squad/) | Runs an incremental software development lifecycle (Shape → PoC → Increments → Harden) as a six-persona software company; orchestrates the `squad-*` subagents. Shows a working end-to-end proof of concept first, then small demoable increments, each committed locally and approved at a gate. Hybrid testing (smoke check → tests with each increment → full QA), sonnet-by-default model profiles tied to effort, stack-agnostic, explore-the-existing-repo-first, durable `README.md`/`SPEC.md`. | 🇬🇧 English |
 | [storm-analyzer](./plugins/storm-analyzer/skills/storm-analyzer/) | Turns any topic into a structured, STORM-style analysis by simulating five expert perspectives, mapping contradictions, and synthesizing an executive-ready briefing with a role-tailored peer review. | 🇬🇧 English |
 
 ## Agents
@@ -48,14 +52,15 @@ inside the `squad` plugin (`plugins/squad/agents/`) and power the [squad](./plug
 
 | Agent | Role |
 |-------|------|
-| `squad-ceo` | Direction, value/cost/ROI, go/no-go |
-| `squad-product-manager` | Scope, requirements, acceptance criteria |
-| `squad-architect` | Tech stack, architecture, ADRs |
-| `squad-developer` | Implementation, tests, docs (`README.md`/`SPEC.md`) |
-| `squad-reviewer` | Quality / correctness / performance review gate **+ QA** (test-plan review, edge-case matrix) |
-| `squad-secops` | Security review gate |
+| `squad-ceo` | Go/no-go on direction and what the PoC must prove (high effort only) |
+| `squad-product-manager` | Scope, requirements, acceptance criteria (high effort) |
+| `squad-architect` | Stack, architecture, and the PoC + increment roadmap |
+| `squad-developer` | PoC, increments with their tests, fixes, docs (`README.md`/`SPEC.md`) |
+| `squad-reviewer` | Diff-scoped review per increment **+ QA** (edge-case matrix, coverage) in Harden |
+| `squad-secops` | Threat model for sensitive designs; security review in Harden |
 
-The specification these are generated from lives at [`prompts/squad.md`](./prompts/squad.md).
+Why the squad works this way — PoC first, hybrid testing, sonnet by default — is in
+[`plugins/squad/docs/DESIGN.md`](./plugins/squad/docs/DESIGN.md).
 
 ## Installation
 

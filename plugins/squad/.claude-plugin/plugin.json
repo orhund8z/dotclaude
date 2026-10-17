@@ -1,8 +1,18 @@
 {
   "name": "squad",
-  "description": "Runs a full software development lifecycle (Analyze → Plan → Dev → Monitor) with a squad of specialised subagents: CEO, Product Manager, Architect, Developer, Reviewer, SecOps.",
-  "author": { "name": "Orhun Dalabasmaz" },
+  "version": "2.0.0",
+  "description": "Incremental software development lifecycle (Shape → PoC → Increments → Harden) run by a squad of specialised subagents — PM, Architect, Developer, Reviewer, SecOps, and a CEO at high effort — with an approval gate at every milestone.",
+  "author": {
+    "name": "Orhun Dalabasmaz"
+  },
   "repository": "https://github.com/orhund8z/dotclaude",
   "license": "MIT",
-  "keywords": ["sdlc", "subagents", "orchestration", "planning", "code-review"]
+  "keywords": [
+    "sdlc",
+    "subagents",
+    "orchestration",
+    "incremental-delivery",
+    "poc",
+    "code-review"
+  ]
 }
