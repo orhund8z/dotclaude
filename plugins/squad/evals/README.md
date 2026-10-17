@@ -9,7 +9,8 @@ claude plugin eval plugins/squad --case '01-*' --runs 1 --ablation none        #
 
 Case 02 needs `--allow-tools Write Edit` (the Architect writes the brief). Bash is deliberately not
 in its `allowed_tools`: granting a shell needs the eval sandbox (bubblewrap + socat on Linux).
-Last run (2.2.0, sonnet): 01 — 1.0 on 3 runs ($0.06 each), 02 — 1.0 ($0.20).
+Last run (2.3.0, sonnet): 01 — 1.0 ($0.07), 02 — 1.0 on 2 runs ($0.17–0.21). Model/team checks in
+02 are regex `tool_used` graders over the Agent call's JSON input, not an LLM judge.
 
 Each case starts a real squad run, so it spends tokens (case 02 runs the Architect). `runs` is set
 to 1 per case to keep cost down; raise it with `--runs 3` before trusting a score change.

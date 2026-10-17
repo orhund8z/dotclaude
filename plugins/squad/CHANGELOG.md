@@ -41,6 +41,10 @@ Keep it to one or two lines; link a DESIGN.md decision for anything larger.
   Balanced = sonnet, Deep = opus"; the README now shows the full persona × profile table and that
   Deep puts Opus only on planning personas.
 
+- **Eval 02 checks models deterministically** — its LLM judge read the whole trace and failed on
+  a correct run (it only saw the start of a long trace). Three `tool_used` regex graders now check
+  the Architect call is `sonnet`/`high` and that no CEO or PM ran on the default lean team.
+
 Tested: medium effort + full team + Balanced, stop at `brief` — CEO (sonnet/medium), PM
 (sonnet/high), Architect (sonnet/high) ran in order and the run stopped at the brief; $0.49.
 
