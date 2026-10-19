@@ -70,7 +70,8 @@ yet (shape, lean), create it from the kickoff answers you were given:
 
 ```markdown
 # Squad STATE
-- Request: <one line> · Effort: <e> · Team: <lean|full> · Profile: <p> · Stops: <chosen stop points, or none>
+- Request: <one line> · Started: <the timestamp you were given>
+- Effort: <e> · Team: <lean|full> · Profile: <p> · Stops: <chosen stop points, or none>
 - Branch: <squad/slug or "none (dirty tree)"> (history in `git log`) · Phase: shape
 ## Roster
 | Persona | Model | Reasoning |
@@ -80,6 +81,9 @@ yet (shape, lean), create it from the kickoff answers you were given:
 ## Kickoff answers & assumptions
 ## Stop log
 ## Decisions taken
+## Usage
+| Stage | Persona | Model | Subagent tokens | Tool uses | Duration (ms) | Finished (UTC) |
+|---|---|---|---|---|---|---|
 ```
 
 ## Output — `docs/squad/brief-vN.md`
