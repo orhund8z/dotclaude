@@ -52,9 +52,10 @@ and in the commits on the `squad/<slug>` branch.
 
 ## Park and resume
 
-- **Park** (an answer at any stop point): in **one** Bash call, set the phase and commit:
-  `sed -i -E 's/(Phase:)[^·]*$/\1 parked at <stop point>/' docs/squad/STATE.md && git add -A &&
-  git commit -q -m "squad: parked at <stop point>"`. End with a short status —
+- **Park** (an answer at any stop point): in **one** Bash call, set the phase, append the usage
+  rows (same `cat >>` as the milestone commit, with the `date -u` timestamp), and commit:
+  `sed -i -E 's/(Phase:)[^·]*$/\1 parked at <stop point>/' docs/squad/STATE.md`, then the rows,
+  then `git add -A && git commit -q -m "squad: parked at <stop point>"`. End with a short status —
   what exists, the branch, and that "resume the squad" continues from here. Parking is a normal
   end, not an error.
 - **Resume** ("resume the squad", "continue the squad", or a new squad request in a repo whose
@@ -156,7 +157,11 @@ logged (shown at the next stop, or in the final report) · `changes-requested` �
    full team* / *low* / *high · full*; "Other" covers any other combination).
    Don't ask what the request already answers — state it as an assumption.
 3. Recommend `/model sonnet` or `/model opus` for the session per the profile.
-4. Don't write `STATE.md` yourself: pass the kickoff answers to the first persona (the Architect,
+4. **Record the start.** Right after the answers, one Bash call —
+   `date -u +%FT%TZ; git status --short | head -3` — gives the start time (and the dirty-tree
+   check). Pass the timestamp to the first persona as `STATE.md`'s `Started:` value; it is the
+   anchor for the total elapsed time in the final report.
+   Don't write `STATE.md` yourself: pass the kickoff answers to the first persona (the Architect,
    or the CEO with the full team), which creates it, including the chosen stop points and an empty
    `## Usage` table (always the last section of `STATE.md`). At `low`, write it
    together with the brief. If `STATE.md` already exists and isn't `done`, this is a **resume**
@@ -212,14 +217,24 @@ diff-scoped Reviewer re-check of just those fixes, and finalises docs (`README.m
 
 ### 5. Final report — ends the run
 When every stage is done, write `docs/squad/final-report.md` **if it doesn't exist yet** (never
-overwrite an existing report). Use the template in `references/artifacts.md` → *Final report*. It
-covers what was built and how to run it, test and coverage results, the increment history
-(commits), decisions taken, open findings and follow-ups, and a **Cost** section:
+overwrite an existing report), in **one** Bash call:
 
-- tokens, duration and tool calls per persona and model, summed from the `## Usage` table;
-- the $ estimate from `references/pricing.md`, labelled as an estimate;
-- the orchestrator's own spend: the run cannot see it, so the report says so and asks the user to
-  run `/cost` in the session for the exact total.
+```bash
+test -f docs/squad/final-report.md || {
+cat > docs/squad/final-report.md <<'REPORT'
+# <Project> — final report
+...what was built, how to run it, test results, increments, decisions, open items...
+REPORT
+python3 <this skill's base directory>/scripts/usage_report.py docs/squad/STATE.md >> docs/squad/final-report.md
+}
+```
+
+You write the results part (template: `references/artifacts.md` → *Final report*). The script
+appends two generated sections: **Duration** — a table whose last row, **Total — all work**, states
+the total elapsed time from kickoff to done, beside per-stage times — and **Cost** (tokens per
+persona and model, the $ estimate, and the `/cost` pointer for the orchestrator's own spend). They
+are computed from `STATE.md`, so they can't be dropped or mis-added, even at low effort: never
+hand-write them. (The skill's base directory is the path shown when the skill loaded.)
 
 **It closes with no question** — not even a soft one: next steps (push, PR, release) are listed as
 statements, not performed. New requirements from the user later re-enter at Shape as a new roadmap
@@ -231,13 +246,19 @@ Every Agent result ends with a `<usage>subagent_tokens: N, tool_uses: M, duratio
 block. Those numbers are the only cost data the run can see, so they are kept in `STATE.md`'s
 `## Usage` table:
 
-| Stage | Persona | Model | Subagent tokens | Tool uses | Duration (ms) |
-|---|---|---|---|---|---|
+| Stage | Persona | Model | Subagent tokens | Tool uses | Duration (ms) | Finished (UTC) |
+|---|---|---|---|---|---|---|
 
 Rows are appended at the **milestone commit call** (and the park call), in the same Bash call that
 commits — one row per persona call since the last write. Nothing is re-read or re-run for this, and
 the table survives a resume. The orchestrator's own tokens are not in any `<usage>` block; the final
 report says so.
+
+**Time is tracked the same way.** `STATE.md` holds `Started:` (from the kickoff call), and every
+usage row ends with the `Finished (UTC)` timestamp of its milestone, taken with `date -u` in the
+same commit call. The final report derives **total elapsed** (Started → last Finished) from them,
+plus per-stage elapsed and the sum of the personas' own durations — three different numbers, all
+shown (see the template).
 
 ## Testing strategy — hybrid
 
@@ -252,8 +273,8 @@ If the project is a git repo with a clean working tree, each milestone is **one 
 
 ```bash
 git switch -c squad/<short-slug> 2>/dev/null || true   # first milestone only; no-op afterwards
-cat >> docs/squad/STATE.md <<'ROWS'
-| inc-N | <persona> | <model> | <subagent_tokens> | <tool_uses> | <duration_ms> |
+cat >> docs/squad/STATE.md <<ROWS
+| inc-N | <persona> | <model> | <subagent_tokens> | <tool_uses> | <duration_ms> | $(date -u +%FT%TZ) |
 ROWS
 git add -A && git commit -q -m "squad: inc-N — <title>" && git rev-parse --short HEAD
 ```
@@ -275,11 +296,12 @@ comparison: they start from a small, fresh context. Hold yourself to this budget
 
 | Step | Your calls |
 |---|---|
-| Kickoff | 0–1 (a quick look at the repo, if there is one), then the question batch |
+| Kickoff | 0–1 (a quick look at the repo, if there is one), the question batch, then 1 (the start-time call) |
 | Shape | 1 per persona that runs (1 with the lean team) |
 | PoC | 1 Developer call + 1 commit call |
 | Each increment | 1 Developer + 1 Reviewer call (+ 2 per fix round) + 1 commit call |
 | Harden | 1 Reviewer call (+ SecOps in the same message) + 1 Developer call (+ re-check) + 1 commit call |
+| Final report | 1 (writes the report and appends the generated Duration and Cost sections) |
 
 So, concretely:
 - **No reading artifacts** to build a stop message or the final report — the handoff carries what they need. Open

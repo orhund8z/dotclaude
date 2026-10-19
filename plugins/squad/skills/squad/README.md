@@ -17,7 +17,7 @@ effort, model profile, and **where (if anywhere) it should stop and wait for you
 3. **Increments** — the rest, layer by layer: each tested, reviewed (only its own diff), and
    committed locally.
 4. **Harden** — full QA (edge cases, end-to-end tests, coverage), a security review, final docs.
-5. **Final report** — what was built, how to run it, results, decisions taken, and the **AI cost**: tokens and duration per persona and model, an estimated $ total, and where to get the exact figure (`/cost`). No closing question.
+5. **Final report** — what was built, how to run it, results, decisions taken, the **total time for all the work** (kickoff → done, in a duration table with per-stage times), and the **AI cost**: tokens per persona and model, an estimated $ total, and where to get the exact figure (`/cost`). No closing question.
 
 **By default it runs straight through** to the final report. If you want to look before it goes
 on, pick **stop points** at kickoff:

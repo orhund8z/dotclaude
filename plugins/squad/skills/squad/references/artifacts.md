@@ -34,6 +34,7 @@ items** (removing them when fixed) — a resumed run has no handoff to read them
 ```markdown
 # Squad STATE
 - Request: <one line>
+- Started: <UTC timestamp from the kickoff call>
 - Effort: medium · Team: lean · Profile: Balanced · Stops: brief, build-complete (or none)
 - Branch: squad/<slug> (or "none (dirty tree)") — commit history lives in `git log`, not here
 - Phase: increment-2 (in review)
@@ -63,8 +64,8 @@ items** (removing them when fixed) — a resumed run has no handoff to read them
 - <decision> — <one-line why> (inc-N)
 
 ## Usage
-| Stage | Persona | Model | Subagent tokens | Tool uses | Duration (ms) |
-|---|---|---|---|---|---|
+| Stage | Persona | Model | Subagent tokens | Tool uses | Duration (ms) | Finished (UTC) |
+|---|---|---|---|---|---|---|
 ```
 
 `## Usage` must stay the last section: milestone commits append rows to it.
@@ -138,18 +139,37 @@ Options: continue · redirect (tell me what to change) · change stop points · 
 ## Open items and follow-ups
 - <item> (severity) — not performed; listed for you
 
+<!-- Duration and Cost below are NOT hand-written: scripts/usage_report.py generates them from
+     STATE.md and they are appended to the report. Example output: -->
+
+## Duration
+
+**Total elapsed, all work (kickoff → done): 1h 15m 05s**
+
+Started `2026-10-19T10:00:00Z`, finished `2026-10-19T11:15:05Z`.
+
+| Stage | Subagent work | Elapsed since previous | Finished (UTC) |
+|---|---|---|---|
+| inc-0 | 3m 00s | 5m 00s | 2026-10-19T10:05:00Z |
+| harden | 1m 00s | 1h 10m 05s | 2026-10-19T11:15:05Z |
+| **Total — all work** | **4m 00s** | **1h 15m 05s** | **2026-10-19T11:15:05Z** |
+
+- *Elapsed* includes the orchestrator's own time and any time spent waiting at a stop point or parked. *Subagent work* is the sum of the personas' own durations; parallel calls overlap, so the sum can exceed the elapsed time of a stage.
+
 ## Cost
-Tokens and duration from the run's own `<usage>` figures (subagents only):
 
-| Stage | Persona | Model | Subagent tokens | Tool uses | Duration |
-|---|---|---|---|---|---|
-| **Total** | | | **<sum>** | **<sum>** | **<sum>** |
+Tokens from the run's own `<usage>` figures (subagents only):
 
-- Per model: <model> — <tokens> tokens — est. $<x> (`references/pricing.md`, prices as of <date>)
-- **Estimated total: $<x>** — rough (±50%): the harness gives one token total per subagent, not an
-  input/output split.
-- **Orchestrator (this session): not measured by the run.** For the exact total, run `/cost` in the
-  Claude Code session and add the figure here.
-- Wall-clock: <kickoff time> → <final time>.
+| Stage | Persona | Model | Subagent tokens | Tool uses |
+|---|---|---|---|---|
+| inc-0 | architect | sonnet | 10,000 | 5 |
+| inc-0 | developer | sonnet | 20,000 | 8 |
+| harden | reviewer | sonnet | 5,000 | 3 |
+| harden | secops | opus | 5,000 | 2 |
+| **Total** | | | **40,000** | **18** |
+
+- opus: 5,000 tokens — est. $0.03
+- sonnet: 35,000 tokens — est. $0.10
+- **Estimated subagent total: $0.13** — rough (±50%): the harness gives one token total per subagent, not an input/output split. Blend 0.9 × input + 0.1 × output price; prices from `references/pricing.md` (2026-10-06).
+- **Orchestrator (this session): not measured by the run.** For the exact total, run `/cost` in the Claude Code session and add the figure here.
 ```
-

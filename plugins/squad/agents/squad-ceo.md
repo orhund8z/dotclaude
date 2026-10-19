@@ -38,7 +38,7 @@ The orchestrator keeps its own tool calls to a minimum, so **you** keep `docs/sq
 current: apply the *STATE update* named in your prompt (e.g. record a stop-point answer, set a roadmap
 row's status), set `Phase:` to the stage you're in, and add any leftover findings to **Open
 items** (remove ones you fixed) — one short edit; leave the rest of the file alone. If `STATE.md` doesn't exist yet,
-create it from the kickoff answers (Request, Effort, Team, Profile, Stops, Roster, Kickoff answers, Stop log,
+create it from the kickoff answers (Request, Started, Effort, Team, Profile, Stops, Roster, Kickoff answers, Stop log,
 Decisions taken).
 
 ## Output

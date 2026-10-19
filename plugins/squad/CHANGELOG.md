@@ -22,6 +22,29 @@ Keep it to one or two lines; link a DESIGN.md decision for anything larger.
 
 \* Same task each time: a small Celsius ↔ Fahrenheit CLI, medium effort, headless run.
 
+## 2.4.1
+
+- **Total elapsed time in the final report's Duration table** — the 2.4.0 template had only a
+  blank "Wall-clock" bullet, and nothing recorded the start time, so a real run left it out. The
+  report now has a Duration table whose last row is **Total — all work** (Started → last finish),
+  beside per-stage elapsed and the personas' summed work time.
+- **Times come from real timestamps** — one `date -u` call right after the kickoff answers (it also
+  does the dirty-tree check) sets `Started:` in `STATE.md`; each milestone (and park) commit call
+  adds a `Finished (UTC)` column value in the same call, so no extra calls beyond that one.
+- **Duration and Cost are generated, not written** — in the first test run the model compressed the
+  report (low effort, Fast profile) and left the table out; asking harder in the prompt is
+  unreliable. `scripts/usage_report.py` now computes both sections from `STATE.md` and the final
+  report appends its output, so the **Total — all work** row is always there and the arithmetic
+  (elapsed, sums, per-model $) isn't done by the model. It has unit tests, run in CI.
+- **Three durations, labelled** — elapsed includes orchestrator time and waits at stop points;
+  subagent work is the sum of the personas' own durations (parallel calls overlap).
+- Park call now also appends the usage rows (the cost section already said it did).
+
+Tested: low-effort run — `STATE.md` got `Started:` and a `Finished (UTC)` per row, and the final
+report carried the generated Duration table (**Total elapsed, all work: 0m 23s**, subagent work
+0m 12s) and Cost section. `test_usage_report.py`: 7 tests pass. A first run without the script
+had dropped the table.
+
 ## 2.4.0
 
 - **Final report with the AI cost** — the run now ends by writing `docs/squad/final-report.md`
