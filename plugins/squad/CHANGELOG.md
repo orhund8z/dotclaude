@@ -22,6 +22,23 @@ Keep it to one or two lines; link a DESIGN.md decision for anything larger.
 
 \* Same task each time: a small Celsius ↔ Fahrenheit CLI, medium effort, headless run.
 
+## 2.4.0
+
+- **Final report with the AI cost** — the run now ends by writing `docs/squad/final-report.md`
+  (once, never overwritten): what was built and how to run it, results, decisions, open items, and a
+  Cost section with tokens, models, duration and an estimated $ total.
+- **What the run can and can't measure** — each subagent's result carries its tokens, tool uses and
+  duration, so those are exact per persona. The harness gives one token total per subagent, not an
+  input/output split, so the $ is an estimate with a stated blend (`references/pricing.md`). The
+  orchestrator's own spend is not visible to the run; the report says so and points to `/cost`.
+- **No extra calls** — usage rows are appended to `STATE.md`'s `## Usage` table in the commit call
+  that already happens at each milestone, so they survive a park and resume.
+- Pricing: claude-api pricing table dated 2026-10-06; the report names the date it used.
+
+Tested: low-effort run — `final-report.md` written with the Cost section and a `## Usage` row;
+the run's own harness total was $0.29 over 38 s, of which the one Developer call was 9,006 subagent
+tokens (about $0.03 by the estimate). Most of the cost was the orchestrator, which the report flags.
+
 ## 2.3.0
 
 - **Team is a third knob, independent of effort and profile** — which personas ran was tied to

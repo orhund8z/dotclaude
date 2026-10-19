@@ -16,6 +16,7 @@ docs/squad/
 ├── …
 ├── harden-review.md       # Harden: QA edge-case matrix, coverage, findings
 ├── harden-security.md     # Harden: security findings (when SecOps ran)
+├── final-report.md        # written once when the run is done: results + cost (never overwritten)
 └── adr/                   # architecture decision records (high effort, or a genuine fork)
 ```
 
@@ -60,7 +61,13 @@ items** (removing them when fixed) — a resumed run has no handoff to read them
 
 ## Decisions taken
 - <decision> — <one-line why> (inc-N)
+
+## Usage
+| Stage | Persona | Model | Subagent tokens | Tool uses | Duration (ms) |
+|---|---|---|---|---|---|
 ```
+
+`## Usage` must stay the last section: milestone commits append rows to it.
 
 ## brief-vN.md
 
@@ -109,3 +116,40 @@ Risks / open: <bullets>
 Next: <next increment title and what it delivers>
 Options: continue · redirect (tell me what to change) · change stop points · harden now · park
 ```
+
+## Final report (docs/squad/final-report.md)
+
+```markdown
+# <Project> — final report
+- Effort: <e> · Team: <t> · Profile: <p> · Stops: <none | list>
+- Branch: <squad/slug> · Commits: <n> (see `git log`)
+- Status: done · Tests: <n passing, coverage x%> · Review: <no open blocker/major>
+
+## What was built
+<2–4 sentences> · How to run it: `<command>` → <expected output>
+
+## Increments
+| Inc | Title | Commit | Result |
+|---|---|---|---|
+
+## Decisions taken
+- <decision> — <one-line why>
+
+## Open items and follow-ups
+- <item> (severity) — not performed; listed for you
+
+## Cost
+Tokens and duration from the run's own `<usage>` figures (subagents only):
+
+| Stage | Persona | Model | Subagent tokens | Tool uses | Duration |
+|---|---|---|---|---|---|
+| **Total** | | | **<sum>** | **<sum>** | **<sum>** |
+
+- Per model: <model> — <tokens> tokens — est. $<x> (`references/pricing.md`, prices as of <date>)
+- **Estimated total: $<x>** — rough (±50%): the harness gives one token total per subagent, not an
+  input/output split.
+- **Orchestrator (this session): not measured by the run.** For the exact total, run `/cost` in the
+  Claude Code session and add the figure here.
+- Wall-clock: <kickoff time> → <final time>.
+```
+
