@@ -157,7 +157,8 @@ logged (shown at the next stop, or in the final report) · `changes-requested` �
    Don't ask what the request already answers — state it as an assumption.
 3. Recommend `/model sonnet` or `/model opus` for the session per the profile.
 4. Don't write `STATE.md` yourself: pass the kickoff answers to the first persona (the Architect,
-   or the CEO with the full team), which creates it, including the chosen stop points. At `low`, write it
+   or the CEO with the full team), which creates it, including the chosen stop points and an empty
+   `## Usage` table (always the last section of `STATE.md`). At `low`, write it
    together with the brief. If `STATE.md` already exists and isn't `done`, this is a **resume**
    (see Park and resume) — skip the kickoff questions.
 
@@ -210,10 +211,33 @@ diff-scoped Reviewer re-check of just those fixes, and finalises docs (`README.m
 `SPEC.md` at medium+). Check the **Definition of Done** (`references/definition-of-done.md`).
 
 ### 5. Final report — ends the run
-What was built, how to run it, test/coverage results, the increment history (commits), decisions
-taken, open findings and follow-ups. **It closes with no question** — not even a soft one like
-"say which you want": next steps (push, PR, release) are listed as statements, not performed. New requirements from the user later re-enter at
-Shape as a new roadmap revision — don't restart.
+When every stage is done, write `docs/squad/final-report.md` **if it doesn't exist yet** (never
+overwrite an existing report). Use the template in `references/artifacts.md` → *Final report*. It
+covers what was built and how to run it, test and coverage results, the increment history
+(commits), decisions taken, open findings and follow-ups, and a **Cost** section:
+
+- tokens, duration and tool calls per persona and model, summed from the `## Usage` table;
+- the $ estimate from `references/pricing.md`, labelled as an estimate;
+- the orchestrator's own spend: the run cannot see it, so the report says so and asks the user to
+  run `/cost` in the session for the exact total.
+
+**It closes with no question** — not even a soft one: next steps (push, PR, release) are listed as
+statements, not performed. New requirements from the user later re-enter at Shape as a new roadmap
+revision — don't restart.
+
+## Cost tracking — no extra calls
+
+Every Agent result ends with a `<usage>subagent_tokens: N, tool_uses: M, duration_ms: K</usage>`
+block. Those numbers are the only cost data the run can see, so they are kept in `STATE.md`'s
+`## Usage` table:
+
+| Stage | Persona | Model | Subagent tokens | Tool uses | Duration (ms) |
+|---|---|---|---|---|---|
+
+Rows are appended at the **milestone commit call** (and the park call), in the same Bash call that
+commits — one row per persona call since the last write. Nothing is re-read or re-run for this, and
+the table survives a resume. The orchestrator's own tokens are not in any `<usage>` block; the final
+report says so.
 
 ## Testing strategy — hybrid
 
@@ -228,8 +252,14 @@ If the project is a git repo with a clean working tree, each milestone is **one 
 
 ```bash
 git switch -c squad/<short-slug> 2>/dev/null || true   # first milestone only; no-op afterwards
+cat >> docs/squad/STATE.md <<'ROWS'
+| inc-N | <persona> | <model> | <subagent_tokens> | <tool_uses> | <duration_ms> |
+ROWS
 git add -A && git commit -q -m "squad: inc-N — <title>" && git rev-parse --short HEAD
 ```
+
+The `cat >>` appends the usage rows for that milestone's persona calls (see Cost tracking); the
+`## Usage` table is the last section, so the rows land in it.
 
 Messages: `squad: inc-0 PoC — <title>`, `squad: inc-N — <title>`, `squad: harden`. The personas'
 `STATE.md` edits ride along in the same commit; there are no state-only commits (parking is the

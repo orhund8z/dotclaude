@@ -164,6 +164,19 @@ Effort preselects the usual team and profile; any combination is allowed.
 **Why.** Each knob answers a different question — how thorough, how many perspectives, how much
 model per perspective — and coupling them forced users to over-buy one to get another.
 
+### D12 — Cost is reported from the run's own figures (2.4.0)
+
+**Problem.** Users want to know what a run cost: tokens, input and output, models, duration, dollars.
+The run can see only subagent `<usage>` totals; the orchestrator's own spend is invisible to it, and
+a $ figure needs prices that change.
+
+**Decision.** Record each subagent's usage in `STATE.md` at the commit call the run already makes,
+write the final report once with the totals, estimate $ from a pricing reference with a stated
+blend, label it as an estimate, and point to `/cost` for the exact total. No extra calls.
+
+**Why.** Honest numbers the run can measure beat precise-looking ones it can't; piggybacking on
+existing calls keeps the cost of tracking near zero.
+
 ## Review scorecard (2.0.0 review)
 
 | Area | 1.1.0 | 2.0.0 target |
