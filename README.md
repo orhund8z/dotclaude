@@ -10,9 +10,11 @@ dotclaude/
 │   └── marketplace.json        # the `orhund8z` marketplace — catalog only
 ├── plugins/                    # published plugins, one self-contained package each
 │   ├── job-evaluator/
+│   │   ├── README.md           # every plugin has one: what it does, install, usage
 │   │   ├── .claude-plugin/plugin.json
 │   │   └── skills/job-evaluator/   # SKILL.md, SETUP.md, PROFILE.example.md
 │   ├── squad/
+│   │   ├── README.md
 │   │   ├── .claude-plugin/plugin.json
 │   │   ├── skills/squad/       # orchestrator skill (+ references/, images/)
 │   │   ├── agents/squad-*.md   # the six personas
@@ -20,6 +22,7 @@ dotclaude/
 │   │   ├── docs/DESIGN.md      # design rationale
 │   │   └── CHANGELOG.md        # release notes: what changed and why
 │   └── storm-analyzer/
+│       ├── README.md
 │       ├── .claude-plugin/plugin.json
 │       └── skills/storm-analyzer/
 ├── skills/          # personal, unpublished skills (~/.claude/skills/)
@@ -39,6 +42,7 @@ Skills are modular instruction packages for [Claude Code](https://docs.anthropic
 | Skill | Description | Language |
 |-------|-------------|----------|
 | [job-evaluator](./plugins/job-evaluator/skills/job-evaluator/) | Evaluates companies and offers against a personal career profile using Glassdoor, Kununu, Levels.fyi, Comprehensive.io, LinkedIn, Xing, de.indeed.com, StepStone, Monster.de, Remotely.de, Layoffs.fyi. Scores each opportunity with a **Career Value Index (CVI)** — total compensation, Fair Share Ratio (pay vs. what the company can afford), equity upside, career capital, and stability. | 🇬🇧 English |
+| [atlas](./skills/atlas/) | Personal child-health advisor: a five-role advisory board (chair, developmental paediatrician, nutritionist, challenging auditor, experience pool) answers health, nutrition, sleep and development questions from the child's own profile, behind an emergency red-flag gate, with evidence levels and confidence ratings. Not a diagnosis. Germany/Bavaria context. | 🇹🇷 Turkish |
 | [job-tracker](./skills/job-tracker/) | Watches a configured company list for openings that match your profile, and discovers other companies working on your topics that are hiring. Produces a self-contained HTML report in two groups — **Tracked** and **Suggested** — with `🆕` badges for postings new since the previous run. | 🇬🇧 English |
 | [ats-job-scan](./skills/ats-job-scan/) | Company-agnostic job radar: discovers thousands of Ashby and Greenhouse job boards (Common Crawl + local seeds), fetches them through the public APIs with per-host rate limiting, keeps Munich (any work model) or remote-Germany/Europe/worldwide roles, scores fit (title, skills, stated pay vs. threshold, freshness, penalties) and writes a **dated markdown report** with `🆕` for postings new since the last scan. Standard-library Python; `--rescore` re-tunes filters in seconds. | 🇬🇧 English |
 | [mcp-builder](./skills/mcp-builder/) | Scaffolds and implements TypeScript MCP servers — shared repo layout, tool-surface design, idempotency/conflict gating, tool annotations, resilience/cost guardrails, low/medium/high effort modes, existing-convention matching, and mandatory smoke-test verification (+ committed test suite at medium/high). Can delegate implementation/review to the `squad-*` subagents. | 🇬🇧 English |
