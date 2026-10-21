@@ -30,6 +30,8 @@ Keep it to one or two lines; link a DESIGN.md decision for anything larger.
   stays the detailed guide and is linked from the new one.
 - **Removed the empty `plugins/squad/##` file** — a stray zero-byte file committed by accident; it
   carried no content and showed up in the plugin package.
+- **Marketplace icon** (`.claude-plugin/icon.png`, 1024 px, rendered from `scripts/icons/`) — `claude plugin validate` warned
+  `ICON_MISSING`, and the plugin listing would have had no icon.
 - **`scripts/check_plugins.py` now fails if a plugin or skill has no `README.md`** — so the doc cannot
   silently go missing again (CI runs it).
 
