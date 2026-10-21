@@ -1,5 +1,6 @@
 {
   "name": "storm-analyzer",
+  "version": "1.0.0",
   "description": "Turns any topic into a STORM-style analysis: five independent research areas researched in parallel, merged with contradictions and weak evidence flagged, an impact-ranked briefing, and a self-critical peer review.",
   "author": { "name": "Orhun Dalabasmaz" },
   "repository": "https://github.com/orhund8z/dotclaude",
