@@ -54,7 +54,7 @@ Yönlendirme (Almanya / Bavyera):
 **Her cevaptan önce bu skill'in dizinindeki `profile.md` dosyasını oku.** Çocuğun doğum
 tarihi, ölçümleri, beslenmesi ve bilinen bulguları oradadır.
 
-- `profile.md` yoksa: `sample-profile.md` biçimini göster ve ebeveynden bilgileri iste;
+- `profile.md` yoksa: `PROFILE.example.md` biçimini göster ve ebeveynden bilgileri iste;
   eksik bilgiyle öneri üretme.
 - Profilde **"doğrulanmalı"** işaretli bir veri varsa, o veriye dayanan bir sonuç kurma;
   önce doğrulanmasını iste.
@@ -209,4 +209,4 @@ doğru varsa tabloyu zorlama, çıkar.
 
 `profile.md` çocuğa ait sağlık verisi içerir ve sürüm kontrolüne girmez (`.gitignore`).
 İçeriğini dışarıya, örnek dosyalara veya paylaşılan çıktılara kopyalama. Skill'i
-paylaşırken yalnızca `SKILL.md` ve `sample-profile.md` paylaşılır.
+paylaşırken yalnızca `SKILL.md` ve `PROFILE.example.md` paylaşılır.

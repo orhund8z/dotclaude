@@ -7,6 +7,7 @@ STRICT_PLUGINS (add a plugin once its files pass). `claude plugin validate` in C
 - JSON manifests parse (marketplace + every plugin.json); plugin.json has name + version.
 - Every SKILL.md and agent file has YAML frontmatter with the required keys and sane values.
 - Every eval case (prompt.md + graders/*.md) has parseable frontmatter.
+- Every plugin and every skill (published or personal) has a README.md.
 - Relative Markdown links and images resolve to files in the repo.
 
 Usage: python3 scripts/check_plugins.py   (exit 1 on any error)
@@ -94,6 +95,13 @@ def check_evals():
                 err(grader, f"unknown grader type '{gfm.get('type')}'")
 
 
+def check_readmes():
+    dirs = list(ROOT.glob("plugins/*")) + list(ROOT.glob("plugins/*/skills/*")) + list(ROOT.glob("skills/*"))
+    for d in dirs:
+        if d.is_dir() and not (d / "README.md").exists():
+            err(d / "README.md", "missing README (what it does, install, usage)")
+
+
 LINK = re.compile(r"!?\[[^\]]*\]\(([^)\s]+)\)")
 
 
@@ -115,6 +123,7 @@ def main():
     check_manifests()
     check_skills_and_agents()
     check_evals()
+    check_readmes()
     check_links()
     if errors:
         print("\n".join(errors))

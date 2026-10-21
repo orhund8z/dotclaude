@@ -22,6 +22,19 @@ Keep it to one or two lines; link a DESIGN.md decision for anything larger.
 
 \* Same task each time: a small Celsius ↔ Fahrenheit CLI, medium effort, headless run.
 
+## 2.4.2
+
+- **Plugin-level `README.md`** (what it does, install, usage, options, layout, cost) — the READMEs
+  had lived only inside `skills/squad/` since the move to the plugin layout, so opening
+  `plugins/squad/` (the folder the marketplace points at) showed no entry point. The skill README
+  stays the detailed guide and is linked from the new one.
+- **Removed the empty `plugins/squad/##` file** — a stray zero-byte file committed by accident; it
+  carried no content and showed up in the plugin package.
+- **Marketplace icon** (`.claude-plugin/icon.png`, 1024 px, rendered from `scripts/icons/`) — `claude plugin validate` warned
+  `ICON_MISSING`, and the plugin listing would have had no icon.
+- **`scripts/check_plugins.py` now fails if a plugin or skill has no `README.md`** — so the doc cannot
+  silently go missing again (CI runs it).
+
 ## 2.4.1
 
 - **Total elapsed time in the final report's Duration table** — the 2.4.0 template had only a
