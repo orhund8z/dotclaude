@@ -90,7 +90,8 @@ Typical first-run numbers (September 2026): ~10,700 boards, ~214,000 postings se
 
 ### Rate limiting
 
-- Per-host pacing: 4 requests/second each to Ashby and Greenhouse, 1 request/second to Common Crawl (`--rps-ashby`, `--rps-greenhouse`, `--rps-cdx`).
+- Per-host pacing: 4 requests/second each to Ashby and Greenhouse, 1 request/second each to Common Crawl and Arbeitnow (`--rps-ashby`, `--rps-greenhouse`, `--rps-cdx`, `--rps-arbeitnow`).
+- **Arbeitnow** (German-market job board, free public API) is paged once per full scan, newest first (`--arbeitnow-pages`, default 15 ≈ one week of postings); it has no company boards, so it is not part of slug discovery. Skip it with `--no-arbeitnow`. Remote postings that state no region follow the same rule as elsewhere (`--include-unspecified-remote`).
 - Adaptive: HTTP 429 doubles the spacing (max 10 s) and honours `Retry-After`; 50 consecutive successes shrink it back.
 - Retries with exponential backoff and jitter on 5xx and network errors; 404/410 is treated as "no such board".
 - A per-host circuit breaker stops a host after 15 consecutive failures, so one outage cannot stall the run.
