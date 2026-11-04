@@ -1,6 +1,6 @@
 ---
 name: job-evaluator
-description: Given one or more company names, URLs, or offers, produces a comprehensive job evaluation report tailored to the candidate profile defined in PROFILE.md, including an Expected Salary Range triangulated from Levels.fyi, Glassdoor, Payscale and local sources, and a Career Value Index (CVI v2) that scores business domain and value of the work, tech-stack fit, employee happiness, career capital, compensation vs. threshold (with Fair Share Ratio), equity upside, and stability. Searches Glassdoor, Kununu, Levels.fyi, LinkedIn, Remotely.de, Xing, de.indeed.com, StepStone (stepstone.de), Monster.de, Comprehensive.io, Layoffs.fyi, Hiring.cafe, Builtin.com, and Wellfound.com. Use this skill when the user provides company names, URLs, or offers, researches job listings, or uses phrases like "evaluate this company", "should I apply here", "compare these offers", "which offer should I take", "what's the salary", "is this a fair offer", "what are the employee reviews", "compare these companies". Also use it for "setup job-evaluator" / "update my profile": if no candidate PROFILE.md exists yet, it first runs a guided setup interview to capture the user's expectations.
+description: Given one or more company names, URLs, or offers, produces a comprehensive job evaluation report tailored to the candidate profile defined in PROFILE.md, including an Expected Salary Range triangulated from Levels.fyi, Glassdoor, Payscale and local sources, and a Career Value Index (CVI v2) that scores business domain and value of the work, tech-stack fit, employee happiness, career capital, compensation vs. threshold (with Fair Share Ratio), equity upside, and stability. Searches Glassdoor, Kununu, Levels.fyi, LinkedIn, Remotely.de, Xing, de.indeed.com, StepStone (stepstone.de), Monster.de, Comprehensive.io, Layoffs.fyi, Hiring.cafe, Builtin.com, Wellfound.com, and Arbeitnow (arbeitnow.com). Use this skill when the user provides company names, URLs, or offers, researches job listings, or uses phrases like "evaluate this company", "should I apply here", "compare these offers", "which offer should I take", "what's the salary", "is this a fair offer", "what are the employee reviews", "compare these companies". Also use it for "setup job-evaluator" / "update my profile": if no candidate PROFILE.md exists yet, it first runs a guided setup interview to capture the user's expectations.
 ---
 
 # Job Evaluator Skill
@@ -142,7 +142,8 @@ Search all sources below. Consolidate all matching positions into one table. Onl
 19. **Hiring.cafe:** `[company name] site:hiring.cafe` or `[company name] hiring.cafe [target role] remote`
 20. **Builtin.com:** `[company name] site:builtin.com [target role]`
 21. **Wellfound.com:** `[company name] site:wellfound.com [target role]`
-22. **Careers page:** `[company name] careers jobs [target roles]`
+22. **Arbeitnow (arbeitnow.com):** German-market job board; its public API (`https://www.arbeitnow.com/api/job-board-api?page=N`, free, no key, ~300 newest jobs per page, `company_name` / `title` / `location` / `remote` / `url`) can be filtered by company name, or search `[company name] site:arbeitnow.com`. Be gentle: one request per second, a handful of pages at most.
+23. **Careers page:** `[company name] careers jobs [target roles]`
 
 ### Stability
 22. **Layoffs.fyi:** `[company name] layoffs.fyi` → layoff events, dates, headcount reductions
@@ -400,6 +401,7 @@ List every source searched and whether it returned relevant data:
 - ☕ Hiring.cafe: [link or "no results"]
 - 🏗️ Builtin.com: [link or "no results"]
 - 🚀 Wellfound.com: [link or "no results"]
+- 🇩🇪 Arbeitnow: [link or "no results"]
 - 🏢 Careers Page: [link or "no results"]
 
 #### 🧭 CAREER VALUE INDEX (CVI v2)

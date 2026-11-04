@@ -35,6 +35,7 @@ Everything runs from one Python script (standard library only, Python 3.9+):
 | User wants newly appeared companies | add `--refresh-slugs` (re-crawls Common Crawl; slug list is otherwise refreshed every 14 days) |
 | Remote jobs that state no region should be included | add `--include-unspecified-remote` |
 | Ignore the dead-board cache | add `--recheck` |
+| Skip the Arbeitnow job board (a full scan also pages its free API, newest first, ~1 week of German-market postings) | add `--no-arbeitnow` |
 | Push the cached scan to the n8n webhook | `python3 scripts/scan_ats_jobs.py --rescore` (needs `push.url` in `local.json` and the secret in the `JOB_RADAR_SECRET` env var; `--push-dry-run` to preview). Never ask the user to paste the secret into chat. |
 | Testing a single board | `--slug ashby:nango --seeds-only --max-boards 20 --no-publish` |
 

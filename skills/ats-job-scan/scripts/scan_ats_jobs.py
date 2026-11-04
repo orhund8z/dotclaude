@@ -15,6 +15,8 @@ Pipeline
   2. FETCH each board through the public JSON APIs, rate-limited per host, with retries/backoff:
        Greenhouse  https://boards-api.greenhouse.io/v1/boards/<slug>/jobs?content=true
        Ashby       https://api.ashbyhq.com/posting-api/job-board/<slug>?includeCompensation=true
+       Arbeitnow   https://www.arbeitnow.com/api/job-board-api?page=N  (German job board aggregator; no company
+                   boards, so it is paged newest-first once per scan; --no-arbeitnow to skip)
   3. FILTER by location  (Munich in any work model, or remote that is open to Germany/Europe/worldwide)
      and by title (Staff/Principal/Senior SRE, platform, architect, engineering manager, ...).
   4. SCORE (title + skills + pay vs. the EUR threshold + freshness - penalties).
@@ -422,6 +424,58 @@ def parse_ashby(slug: str, data: dict) -> List[Job]:
     return jobs
 
 
+ARBEITNOW_API = "https://www.arbeitnow.com/api/job-board-api?page=%d"
+
+
+def parse_arbeitnow(data: dict) -> List[Job]:
+    """Arbeitnow (German-market job board) aggregates postings from many ATSs; it has no company boards."""
+    jobs = []
+    for j in data.get("data", []):
+        company = (j.get("company_name") or "").strip()
+        ts = j.get("created_at")
+        try:
+            published = dt.datetime.fromtimestamp(int(ts), dt.timezone.utc).isoformat() if ts else ""
+        except (TypeError, ValueError, OSError):
+            published = ""
+        remote = bool(j.get("remote"))
+        jobs.append(Job(
+            ats="arbeitnow", slug=re.sub(r"[^a-z0-9]+", "-", company.lower()).strip("-"), company=company or "?",
+            job_id=str(j.get("slug") or ""), title=(j.get("title") or "").strip(), url=j.get("url") or "",
+            locations=[x for x in [(j.get("location") or "").strip()] if x], remote=remote,
+            workplace="Remote" if remote else "", description=clean_html(j.get("description", "")),
+            published=published,
+        ))
+    return jobs
+
+
+def fetch_arbeitnow(lim: HostLimiter, cfg: Config, max_pages: int, stats: "Stats") -> List[Job]:
+    """Page through the free public API (newest first, ~300 jobs/page, ~1 week of postings) and keep candidates."""
+    cands: List[Job] = []
+    for page in range(1, max_pages + 1):
+        try:
+            body = http_get(ARBEITNOW_API % page, lim)
+            data = json.loads(body) if body else {}
+        except (FetchError, ValueError) as e:
+            log("  ! arbeitnow page %d: %s" % (page, str(e)[:120]))
+            break
+        jobs = parse_arbeitnow(data)
+        if not jobs:
+            break
+        for j in jobs:
+            if not j.job_id or classify_title(j.title, cfg) is None:
+                continue
+            loc_text = " | ".join(j.locations)
+            if cfg.munich_re.search(loc_text) or cfg.munich_re.search(j.title) or is_remote_job(j, cfg):
+                j.description = j.description[:12000]
+                cands.append(j)
+        with stats.lock:
+            stats.jobs_seen += len(jobs)
+    with stats.lock:
+        stats.jobs_candidates += len(cands)
+    log("[arbeitnow] %d candidates from up to %d pages" % (len(cands), max_pages))
+    return cands
+
+
 # -------------------------------------------------------------------------- filtering
 @dataclass
 class Match:
@@ -784,7 +838,7 @@ def render_table(rows: List[Match], seen_first: Dict[str, str], baseline: bool, 
             sig += " · ⚠ " + ", ".join(m.flags)
         out.append("| %d | **%d** | %s%s | %s | %s | %s | %s | [%s](%s) |" % (
             i, m.score, " ".join(badges) + " " if badges else "", esc(j.company), esc(j.title), esc(m.where), esc(m.pay) or "—",
-            esc(sig), "Ashby" if j.ats == "ashby" else "Greenhouse", j.url))
+            esc(sig), {"ashby": "Ashby", "greenhouse": "Greenhouse", "arbeitnow": "Arbeitnow"}.get(j.ats, j.ats), j.url))
     return out
 
 
@@ -994,6 +1048,9 @@ def main() -> int:
     ap.add_argument("--rps-ashby", type=float, default=4.0, help="max requests/second to api.ashbyhq.com")
     ap.add_argument("--rps-greenhouse", type=float, default=4.0, help="max requests/second to boards-api.greenhouse.io")
     ap.add_argument("--rps-cdx", type=float, default=1.0, help="max requests/second to index.commoncrawl.org")
+    ap.add_argument("--rps-arbeitnow", type=float, default=1.0, help="max requests/second to www.arbeitnow.com (free API: be gentle)")
+    ap.add_argument("--arbeitnow-pages", type=int, default=15, help="max Arbeitnow API pages (~300 jobs each, newest first; default 15 ≈ 1 week)")
+    ap.add_argument("--no-arbeitnow", action="store_true", help="skip the Arbeitnow job board (Ashby/Greenhouse only)")
     ap.add_argument("--min-score", type=int, default=None)
     ap.add_argument("--include-unspecified-remote", action="store_true", help="also list remote jobs whose region is not stated")
     ap.add_argument("--no-publish", action="store_true", help="write the markdown only; skip publish_cmd")
@@ -1012,6 +1069,7 @@ def main() -> int:
     lims = {
         "ashby": HostLimiter("api.ashbyhq.com", args.rps_ashby),
         "greenhouse": HostLimiter("boards-api.greenhouse.io", args.rps_greenhouse),
+        "arbeitnow": HostLimiter("www.arbeitnow.com", args.rps_arbeitnow),
     }
     cdx_lim = HostLimiter("index.commoncrawl.org", args.rps_cdx)
     stats = Stats()
@@ -1025,6 +1083,8 @@ def main() -> int:
         slugs = discover_slugs(args, cdx_lim)
         log("[discover] %d ashby + %d greenhouse candidate slugs" % (len(slugs["ashby"]), len(slugs["greenhouse"])))
         cands, partial = run_scan(slugs, lims, cfg, args, stats)
+        if not args.no_arbeitnow and not partial:
+            cands.extend(fetch_arbeitnow(lims["arbeitnow"], cfg, args.arbeitnow_pages, stats))
         save_candidates(cands, stats, partial)
         for ats, lim in lims.items():
             if lim.throttles:
